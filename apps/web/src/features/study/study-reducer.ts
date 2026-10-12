@@ -1,0 +1,93 @@
+export type StudyMode = 'focus' | 'all' | 'due' | 'stems';
+export type LevelFilter = 'all' | 'new' | 'vague' | 'mastered' | 'due';
+
+export type StudyUiState = {
+  mode: StudyMode;
+  focusId: string;
+  filter: LevelFilter;
+  keyword: string;
+  revealed: string[];
+  activeBlanks: Record<string, number>;
+  selected: Record<string, string>;
+  nodeFocus: Record<string, number>;
+  activeEssayCase: Record<string, string>;
+  sidebarCollapsed: boolean;
+  toast: string | null;
+};
+
+export type StudyUiAction =
+  | { type: 'toast'; message: string | null }
+  | { type: 'mode'; mode: StudyMode }
+  | { type: 'filter'; filter: LevelFilter }
+  | { type: 'keyword'; keyword: string }
+  | { type: 'focus'; id: string }
+  | { type: 'toggle-reveal'; id: string }
+  | { type: 'reveal-all'; ids: string[] }
+  | { type: 'mask-all' }
+  | { type: 'blank'; id: string; index: number }
+  | { type: 'pick'; key: string; choice: string }
+  | { type: 'node'; id: string; index: number }
+  | { type: 'essay'; id: string; caseKey: string }
+  | { type: 'sidebar' }
+  | { type: 'sidebar-set'; collapsed: boolean }
+  | { type: 'start' }
+  | { type: 'jump'; id: string; matches: boolean };
+
+export const initialStudyUi: StudyUiState = {
+  mode: 'focus',
+  focusId: 'Q1',
+  filter: 'all',
+  keyword: '',
+  revealed: [],
+  activeBlanks: { Q9: 2 },
+  selected: {},
+  nodeFocus: {},
+  activeEssayCase: {},
+  sidebarCollapsed: false,
+  toast: null,
+};
+
+export function studyUiReducer(state: StudyUiState, action: StudyUiAction): StudyUiState {
+  switch (action.type) {
+    case 'toast':
+      return { ...state, toast: action.message };
+    case 'mode':
+      return { ...state, mode: action.mode };
+    case 'filter':
+      return { ...state, filter: action.filter, mode: action.filter === 'due' ? 'due' : 'all' };
+    case 'keyword':
+      return { ...state, keyword: action.keyword, mode: 'all' };
+    case 'focus':
+      return { ...state, focusId: action.id, mode: 'focus' };
+    case 'toggle-reveal': {
+      const revealed = state.revealed.includes(action.id)
+        ? state.revealed.filter((id) => id !== action.id)
+        : [...state.revealed, action.id];
+      return { ...state, revealed };
+    }
+    case 'reveal-all':
+      return { ...state, revealed: action.ids, mode: 'all', filter: 'all', keyword: '' };
+    case 'mask-all':
+      return { ...state, revealed: [], mode: 'stems', filter: 'all', keyword: '' };
+    case 'blank':
+      return { ...state, activeBlanks: { ...state.activeBlanks, [action.id]: action.index } };
+    case 'pick':
+      return { ...state, selected: { ...state.selected, [action.key]: action.choice } };
+    case 'node':
+      return { ...state, nodeFocus: { ...state.nodeFocus, [action.id]: action.index } };
+    case 'essay':
+      return { ...state, activeEssayCase: { ...state.activeEssayCase, [action.id]: action.caseKey } };
+    case 'sidebar':
+      return { ...state, sidebarCollapsed: !state.sidebarCollapsed };
+    case 'sidebar-set':
+      return { ...state, sidebarCollapsed: action.collapsed };
+    case 'start':
+      return { ...state, revealed: [], filter: 'all', keyword: '', focusId: 'Q1', mode: 'focus' };
+    case 'jump':
+      return action.matches
+        ? { ...state, focusId: action.id, mode: 'focus' }
+        : { ...state, focusId: action.id, mode: 'focus', filter: 'all', keyword: '' };
+    default:
+      return state;
+  }
+}

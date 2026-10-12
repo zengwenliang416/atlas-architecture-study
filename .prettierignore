@@ -1,0 +1,6 @@
+src/data.js
+packages/bank-architecture/src/questions.js
+dist
+node_modules
+apps/*/dist
+packages/*/dist

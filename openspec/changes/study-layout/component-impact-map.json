@@ -1,0 +1,28 @@
+{
+  "new_components": [],
+  "reused_components": [
+    "StudyPage",
+    "QuestionCard",
+    "Toast",
+    "SignInPage"
+  ],
+  "extraction_triggers": [
+    "目录、指标或题目卡被第二个页面使用时才从 StudyPage 抽出"
+  ],
+  "forbidden_dependencies": [
+    "QuestionCard must not call /api",
+    "apps/web must not import apps/api",
+    "packages/domain must not import apps"
+  ],
+  "hooks": [],
+  "utilities": [
+    "@atlas/domain"
+  ],
+  "services": [
+    "apps/web/src/shared/api/client.ts"
+  ],
+  "required_component_tests": [
+    "top-bar reorder stays inside StudyPage and does not add a QuestionCard snapshot"
+  ],
+  "unresolved_gaps": []
+}

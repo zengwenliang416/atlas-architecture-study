@@ -1,0 +1,10 @@
+node_modules/
+apps/*/dist/
+apps/*/dist-test/
+packages/*/dist/
+packages/*/dist-test/
+.env
+.env.local
+*.log
+.DS_Store
+._*

@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "change_id": "study-layout",
+  "assertions": [
+    {
+      "id": "A1",
+      "statement": "1280×800 下，登录表单完整可见；登录后不滚动就能同时看到题目目录和当前题目标题。顶栏同一行包含品牌、掌握进度、退出、开始自测、今日复习和四个紧凑数字。",
+      "verify_via": "sensory",
+      "status": "failing",
+      "evidence_ref": null
+    }
+  ]
+}

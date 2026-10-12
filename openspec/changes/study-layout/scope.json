@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "change_id": "study-layout",
+  "stage": "prototype-declarations",
+  "allowed_roots": [
+    "apps/web/src/styles/theme.css",
+    "apps/web/src/i18n/locales/zh-CN.json",
+    "apps/web/src/main.tsx",
+    "apps/web/src/app/app.tsx",
+    "apps/web/src/features/study/study-page.tsx"
+  ],
+  "denied_roots": [
+    ".git",
+    "node_modules",
+    "dist",
+    "coverage",
+    "apps/api",
+    "packages"
+  ],
+  "requires_review_on": [
+    "package.json",
+    "database",
+    "migrations"
+  ],
+  "allowed_operations": {
+    "create": true,
+    "modify": true,
+    "delete": false,
+    "rename": false
+  },
+  "prototype_sources": [],
+  "expires_when": "verification_started"
+}

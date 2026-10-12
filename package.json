@@ -1,0 +1,30 @@
+{
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.20.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "pnpm --filter @atlas/domain build && pnpm --filter @atlas/api build && pnpm --filter @atlas/web build",
+    "dev": "pnpm --filter @atlas/domain build && pnpm --parallel --filter @atlas/api --filter @atlas/web dev",
+    "test": "pnpm --filter @atlas/domain test && node tests/smoke.mjs",
+    "test:api": "pnpm --filter @atlas/api test",
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose down",
+    "lint": "eslint apps packages"
+  },
+  "pnpm": {
+    "overrides": {
+      "@better-auth/utils": "0.4.2"
+    },
+    "onlyBuiltDependencies": ["esbuild"]
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.12.0",
+    "prettier": "3.9.10",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.71.1"
+  }
+}

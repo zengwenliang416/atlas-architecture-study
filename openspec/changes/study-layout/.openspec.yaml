@@ -1,0 +1,13 @@
+schema: spec-driven
+title: 优化复习工作台排版
+specnav:
+  schema_version: specnav.change.v1
+  change_id: study-layout
+  lifecycle:
+    revision: 0
+    stage: requirements
+    state: not-started
+    active_task_id: null
+    active_generation_id: null
+    acceptances: []
+  source: null

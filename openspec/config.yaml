@@ -1,0 +1,10 @@
+{
+  schema: spec-driven,
+  specnav:
+    {
+      schema_version: specnav.project.v1,
+      project_id: project-897eb83daf5705446ed876aeec320b1c,
+      active_profile: codex,
+      tools: [ codex ]
+    }
+}

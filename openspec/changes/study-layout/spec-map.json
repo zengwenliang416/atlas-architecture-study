@@ -1,0 +1,53 @@
+{
+  "touched_specs": [
+    "ui-design",
+    "system-architecture",
+    "frontend-backend-data-flow",
+    "component-architecture"
+  ],
+  "ui_rules": [
+    "light-only",
+    "keep existing color tokens and font stacks",
+    "update ui-design before changing spacing rhythm"
+  ],
+  "architecture_modules": [
+    "apps/web",
+    "apps/api unchanged",
+    "packages/domain unchanged",
+    "packages/bank-architecture unchanged"
+  ],
+  "api_contracts": [
+    "no request or response field changes"
+  ],
+  "database_entities": [
+    "study_record unchanged"
+  ],
+  "permissions": [
+    "login required for bank and study",
+    "public sign-up remains closed after setup"
+  ],
+  "operational_constraints": [
+    "no deploy",
+    "no Redis"
+  ],
+  "data_flows": [
+    "FLOW-SETUP",
+    "FLOW-SIGN-IN",
+    "FLOW-BANK",
+    "FLOW-RECORDS",
+    "FLOW-COMPLETE",
+    "FLOW-NOTES",
+    "FLOW-LEVEL",
+    "FLOW-IMPORT"
+  ],
+  "theme_modes": [
+    "light-only",
+    "theme-toggle:none"
+  ],
+  "locale_policy": [
+    "i18n:disabled",
+    "locales:zh-CN",
+    "default-locale:zh-CN"
+  ],
+  "unresolved_gaps": []
+}

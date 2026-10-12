@@ -1,0 +1,14 @@
+{
+  "name": "@atlas/bank-architecture",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "dependencies": {
+    "@atlas/domain": "workspace:*"
+  }
+}
