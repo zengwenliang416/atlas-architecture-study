@@ -20,6 +20,9 @@ assert.equal((node('todayList').innerHTML.match(/class="dueitem"/g) || []).lengt
 assert.match(node('todayList').innerHTML, /还有 26 道/);
 assert.match(node('questionCards').innerHTML, /完整论文参考范文/);
 assert.match(node('questionCards').innerHTML, /data-essaycase="Q22"/);
+assert.match(node('questionCards').innerHTML, /Q22 · /);
+assert.match(node('questionCards').innerHTML, /复制本文/);
+assert.doesNotMatch(node('questionCards').innerHTML, /《论负载均衡技术》/);
 node('search').value = 'ATAM 架构权衡分析方法';
 node('search').oninput({ target: { value: 'ATAM 架构权衡分析方法' } });
 const filtered = (node('questionCards').innerHTML.match(/class="q-shell /g) || []).length;
