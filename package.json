@@ -12,7 +12,8 @@
     "test:api": "pnpm --filter @atlas/api test",
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
-    "lint": "eslint apps packages"
+    "lint": "eslint apps packages",
+    "maintenance": "python3 scripts/verify_maintenance.py"
   },
   "pnpm": {
     "overrides": {
