@@ -14,7 +14,7 @@ Status: implemented
 
 刊头是短的。标题是「对话题库复习」，旁边一句说明、一行计数、开始自测和今日复习。第一屏的画面是这道真题本身。轨道图、英文眉题和四张指标卡都去掉了。登录后的工作台用同一条刊头，并保留退出。
 
-九遍都落在 `src/styles.css`、`src/body.html`、`src/controller.js`，以及 `apps/web` 的样式、`study-page.tsx`、`question-card.tsx`、`sign-in-page.tsx`。`dist/` 与静态源码一致。间距走 4 的步长。按钮上的记号去掉。搜索是「搜索」。揭晓前，概念要点、各空答案和第三、第四区都不显示。论文仍是一栏阅读。宋体用于刊头、题目标题和论文。界面字重是 400 和 500。没有入场飞入，悬停只换表面色，按下缩到 0.98。窄屏不显示「顶部」，避免挡住题干。
+九遍都落在 `src/styles.css`、`src/body.html`、`src/controller.js`，以及 `apps/web` 的样式、`study-page.tsx`、`question-card.tsx`、`sign-in-page.tsx`。`dist/` 与静态源码一致。间距走 4 的步长。按钮上的记号去掉。搜索是「搜索」。揭晓前，概念要点、未揭晓的各空答案和第三、第四区都不显示。多空可以按空揭晓，见 [费曼门槛、换空和按空揭晓](./2026-11-01-feynman-blank-focus.md)。论文仍是一栏阅读。宋体用于刊头、题目标题和论文。界面字重是 400 和 500。没有入场飞入，悬停只换表面色，按下缩到 0.98。窄屏不显示「顶部」，避免挡住题干。
 
 ## Alternatives considered
 

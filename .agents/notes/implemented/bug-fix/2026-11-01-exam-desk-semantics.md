@@ -8,7 +8,7 @@ Status: implemented
 
 ## Decision
 
-揭晓只来自每题的「揭晓答案」。全部题目只把筛选结果列成卡片，标题在揭晓前不写正确答案。已经揭晓的题保持揭晓。
+整卡讲解只来自每题的「揭晓答案」。多空题还可以在选定该空后揭晓或遮挡该空的答案，见 [费曼门槛、换空和按空揭晓](../feature/2026-11-01-feynman-blank-focus.md)。全部题目只把筛选结果列成卡片，标题在揭晓前不写正确答案。已经揭晓的题保持揭晓。
 
 静态日历日在 `src/storage.js` 用 UTC+8 计算，不引用 `@atlas/domain`。静态页以文件打开，没有工作区包的解析；两边的天界必须相同，所以算法跟 `shanghaiDate` 对齐，加日也不走宿主时区。语义写在 [静态站点](../../../../docs/subsystems/static-site.md) 和 [Web](../../../../docs/subsystems/web.md)。
 
@@ -28,4 +28,4 @@ Status: implemented
 
 `packages/bank-architecture` 和 `src/data.js` 没有改。掌握等级、间隔天数和笔记长度仍由原来的规则计算。静态间隔表仍是一份拷贝。
 
-`tests/smoke.mjs` 检查上海午夜、加日，以及窄屏让出底栏且不显示「顶部」。`tests/startup.mjs` 检查全部题目不揭晓，计划列表的剩余道数，以及底栏计数跟筛选后的题数一致。静态站点和 Web 两页要写下这些规则，字数上限分别是 153 和 78。
+`tests/smoke.mjs` 检查上海午夜、加日，以及窄屏让出底栏且不显示「顶部」。`tests/startup.mjs` 检查全部题目不揭晓，计划列表的剩余道数，以及底栏计数跟筛选后的题数一致。静态站点和 Web 两页写下这些规则。字数上限在 [doc-budgets.json](../../../../scripts/doc-budgets.json)。

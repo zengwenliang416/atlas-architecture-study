@@ -152,6 +152,12 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
         event.preventDefault();
         const next = visible[focusIndex + (event.key === 'ArrowLeft' ? -1 : 1)];
         if (next) dispatch({ type: 'jump', id: next.id, matches: true });
+      } else if (event.key === '[' || event.key === ']') {
+        if (!current || current.blanks.length < 2) return;
+        event.preventDefault();
+        const index = ui.activeBlanks[current.id] ?? 0;
+        const next = event.key === ']' ? (index + 1) % current.blanks.length : (index - 1 + current.blanks.length) % current.blanks.length;
+        dispatch({ type: 'blank', id: current.id, index: next });
       } else if (/^[1-4]$/.test(event.key)) {
         const question = questions.find((item) => item.id === focusId);
         const blank = question?.blanks[(ui.activeBlanks[question.id] ?? 0)] ?? question?.blanks[0];
@@ -163,11 +169,22 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
       } else if (event.key === 'Enter') {
         event.preventDefault();
         dispatch({ type: 'toggle-reveal', id: focusId });
+      } else if (event.key === 'c') {
+        if (!ui.revealed.includes(focusId)) return;
+        event.preventDefault();
+        const button = document.querySelector<HTMLButtonElement>(`#${focusId} .reviewbtn`);
+        if (!button || button.disabled) {
+          const gate = document.querySelector(`#${focusId} .margin-rule`);
+          if (gate?.textContent) dispatch({ type: 'toast', message: gate.textContent });
+          else if (button?.textContent?.includes('今日已复习')) dispatch({ type: 'toast', message: '今天已经复习过这道题，明天继续更有效' });
+          return;
+        }
+        button.click();
       }
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [ui.mode, ui.activeBlanks, visible, focusIndex, focusId, questions]);
+  }, [ui.mode, ui.activeBlanks, ui.revealed, visible, focusIndex, focusId, questions, current]);
 
   function toast(message: string) {
     dispatch({ type: 'toast', message });
@@ -287,7 +304,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
   const listMode = ui.mode === 'all' || ui.mode === 'due' || ui.mode === 'stems';
   const shown = listMode ? visible : current ? [current] : [];
   const modeHint = ui.mode === 'focus'
-    ? `第 ${visible.length === 0 || focusIndex < 0 ? 0 : focusIndex + 1} / ${visible.length} 题，方向键切题，1 到 4 选择，Enter 揭晓`
+    ? `第 ${visible.length === 0 || focusIndex < 0 ? 0 : focusIndex + 1} / ${visible.length} 题，方向键切题，1 到 4 选择，[ ] 换空，Enter 揭晓，揭晓后 c 完成`
     : `列出 ${shown.length} 题`;
 
   return (
@@ -357,6 +374,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
                   record={record}
                   today={today}
                   reveal={ui.revealed.includes(question.id)}
+                  openBlanks={question.blanks.map((_, index) => ui.revealed.includes(question.id) || ui.revealedBlanks.includes(`${question.id}_${index}`))}
                   blankIndex={blankIndex}
                   selectedId={ui.selected[`${question.id}_${blankIndex}`]}
                   nodeIndex={ui.nodeFocus[question.id] ?? 0}
@@ -364,6 +382,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
                   mode={ui.mode}
                   completePending={completeMutation.isPending}
                   onReveal={() => dispatch({ type: 'toggle-reveal', id: question.id })}
+                  onRevealBlank={() => dispatch({ type: 'toggle-blank-reveal', id: question.id, index: blankIndex })}
                   onBlank={(index) => dispatch({ type: 'blank', id: question.id, index })}
                   onPick={(choice) => dispatch({ type: 'pick', key: `${question.id}_${blankIndex}`, choice })}
                   onNode={(index) => dispatch({ type: 'node', id: question.id, index })}
