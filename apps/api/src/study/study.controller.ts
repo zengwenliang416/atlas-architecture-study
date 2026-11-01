@@ -12,6 +12,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  attemptsCommandSchema,
+  essayCommandSchema,
   importCommandSchema,
   levelCommandSchema,
   notesCommandSchema,
@@ -57,6 +59,27 @@ export class StudyController {
     const parsed = notesCommandSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException({ code: 'invalid_body', detail: '笔记格式无效' });
     return this.study.saveNotes(this.userId(request), this.bankId(bankId), id, parsed.data.version, parsed.data.notes);
+  }
+
+  @Patch('records/:questionId/essay')
+  essay(
+    @Req() request: FastifyRequest,
+    @Param('questionId') questionId: string,
+    @Body() body: unknown,
+    @Query('bankId') bankId?: string,
+  ) {
+    const id = this.parseQuestionId(questionId);
+    const parsed = essayCommandSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException({ code: 'invalid_body', detail: '论文草稿格式无效' });
+    return this.study.saveEssay(this.userId(request), this.bankId(bankId), id, parsed.data.version, parsed.data.essayDraft);
+  }
+
+  @Post('attempts')
+  @HttpCode(200)
+  attempts(@Req() request: FastifyRequest, @Body() body: unknown, @Query('bankId') bankId?: string) {
+    const parsed = attemptsCommandSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException({ code: 'invalid_body', detail: '交卷结果格式无效' });
+    return this.study.saveAttempts(this.userId(request), this.bankId(bankId), parsed.data.items);
   }
 
   @Post('records/:questionId/level')

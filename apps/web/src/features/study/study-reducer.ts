@@ -1,5 +1,10 @@
 export type StudyMode = 'focus' | 'all' | 'due' | 'stems';
-export type LevelFilter = 'all' | 'new' | 'vague' | 'mastered' | 'due';
+export type LevelFilter = 'all' | 'new' | 'vague' | 'mastered' | 'due' | 'wrong';
+
+export type CompareView = {
+  lines: string[];
+  tally: { right: number; wrong: number; skip: number; open: number };
+};
 
 export type StudyUiState = {
   mode: StudyMode;
@@ -14,6 +19,8 @@ export type StudyUiState = {
   activeEssayCase: Record<string, string>;
   sidebarCollapsed: boolean;
   toast: string | null;
+  exam: { ids: string[] } | null;
+  compare: CompareView | null;
 };
 
 export type StudyUiAction =
@@ -32,7 +39,9 @@ export type StudyUiAction =
   | { type: 'essay'; id: string; caseKey: string }
   | { type: 'sidebar' }
   | { type: 'sidebar-set'; collapsed: boolean }
-  | { type: 'start' }
+  | { type: 'start'; ids: string[] }
+  | { type: 'mask-exam' }
+  | { type: 'graded'; compare: CompareView }
   | { type: 'jump'; id: string; matches: boolean };
 
 export const initialStudyUi: StudyUiState = {
@@ -48,6 +57,8 @@ export const initialStudyUi: StudyUiState = {
   activeEssayCase: {},
   sidebarCollapsed: false,
   toast: null,
+  exam: null,
+  compare: null,
 };
 
 export function studyUiReducer(state: StudyUiState, action: StudyUiAction): StudyUiState {
@@ -91,8 +102,24 @@ export function studyUiReducer(state: StudyUiState, action: StudyUiAction): Stud
       return { ...state, sidebarCollapsed: !state.sidebarCollapsed };
     case 'sidebar-set':
       return { ...state, sidebarCollapsed: action.collapsed };
+    case 'mask-exam':
+      if (!state.exam) return state;
+      return { ...state, revealed: [], revealedBlanks: [], mode: 'focus' };
+    case 'graded':
+      return { ...state, compare: action.compare };
     case 'start':
-      return { ...state, revealed: [], revealedBlanks: [], filter: 'all', keyword: '', focusId: 'Q1', mode: 'focus' };
+      return {
+        ...state,
+        revealed: [],
+        revealedBlanks: [],
+        selected: {},
+        filter: 'all',
+        keyword: '',
+        focusId: action.ids[0] ?? 'Q1',
+        mode: 'focus',
+        exam: { ids: action.ids },
+        compare: null,
+      };
     case 'jump':
       return action.matches
         ? { ...state, focusId: action.id, mode: 'focus' }

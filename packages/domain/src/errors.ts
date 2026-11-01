@@ -6,7 +6,7 @@ export const MAX_STAGE = REVIEW_INTERVALS.length - 1;
 export const LEGACY_STORAGE_KEY = 'architecture_review_focused_notes_v2';
 export const NOTE_LIMIT = 20_000;
 
-export type DomainErrorCode = 'invalid_level' | 'invalid_notes';
+export type DomainErrorCode = 'invalid_level' | 'invalid_notes' | 'invalid_attempt' | 'invalid_essay';
 
 export type DomainError = {
   code: DomainErrorCode;

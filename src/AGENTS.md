@@ -4,3 +4,4 @@
 
 - 学习状态只进 `localStorage`。
 - 间隔表和日历日在 `src/storage.js`。改天数时对照 `packages/domain` 的 `REVIEW_INTERVALS`。
+- `src/desk.js` 与 `packages/desk` 保持同一份。

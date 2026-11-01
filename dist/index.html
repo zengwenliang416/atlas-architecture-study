@@ -30,13 +30,14 @@
   <div class="side-header"><div class="side-title">知识目录 <span>/ 39</span></div><button class="mini-btn" id="toggleSidebar" type="button" aria-expanded="false">展开目录</button></div>
   <input id="search" class="search" type="search" placeholder="搜索" aria-label="搜索题目">
   <div class="filterrow" id="filters">
-   <button class="filterchip active" type="button" data-filter="all">全部</button><button class="filterchip" type="button" data-filter="new">不会</button><button class="filterchip" type="button" data-filter="vague">模糊</button><button class="filterchip" type="button" data-filter="mastered">掌握</button><button class="filterchip" type="button" data-filter="due">今日到期</button>
+   <button class="filterchip active" type="button" data-filter="all">全部</button><button class="filterchip" type="button" data-filter="new">不会</button><button class="filterchip" type="button" data-filter="vague">模糊</button><button class="filterchip" type="button" data-filter="mastered">掌握</button><button class="filterchip" type="button" data-filter="due">今日到期</button><button class="filterchip" type="button" data-filter="wrong">错题</button>
   </div>
   <div class="side-list" id="toc"></div>
   <div class="side-bottom">到期复习 <strong id="sideDue">39</strong> 道<br>学习记录只在这台浏览器</div>
  </aside>
  <main class="main" id="questionArea">
-  <div class="welcome"><div><strong id="modeLabel">逐题学习</strong><p id="modeHint">答案先遮着，选完再揭晓</p></div><div class="mode-actions"><button class="text-action" id="expandBtn" type="button">全部题目</button><button class="text-action" id="stemBtn" type="button">只看题干</button></div><div class="mini-nav"><button class="mini-btn" id="prevBtn" type="button">上一题</button><button class="mini-btn" id="nextBtn" type="button">下一题</button></div></div>
+  <div class="welcome"><div><strong id="modeLabel">逐题学习</strong><p id="modeHint">答案先遮着，选完再揭晓</p></div><div class="mode-actions"><button class="text-action" id="expandBtn" type="button">全部题目</button><button class="text-action" id="stemBtn" type="button">只看题干</button><button class="text-action" id="maskBtn" type="button" hidden>遮挡</button><button class="text-action" id="submitBtn" type="button" hidden>交卷</button></div><div class="mini-nav"><button class="mini-btn" id="prevBtn" type="button">上一题</button><button class="mini-btn" id="nextBtn" type="button">下一题</button></div></div>
+  <div id="compareSummary"></div>
   <div id="questionCards"></div>
  </main>
 </div>
@@ -44,6 +45,7 @@
  <h2>复习间隔</h2>
  <p>今天按 Asia/Shanghai 计算。学习记录只留在这台浏览器。新题默认今天到期；完成一轮后安排下一阶段。同一天重复完成不会再推进间隔。</p>
  <div class="interval"><span>当天</span><span>1 天</span><span>2 天</span><span>4 天</span><span>7 天</span><span>15 天</span><span>30 天</span></div>
+ <div id="monthLoad" class="month-load"></div>
  <div class="schedule-panel"><div class="duebox"><h3>今天应该复习</h3><div id="todayList"></div></div><div class="duebox"><h3>接下来的计划</h3><div id="futureList"></div></div></div>
 </section>
 <section class="export">

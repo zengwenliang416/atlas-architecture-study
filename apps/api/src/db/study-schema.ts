@@ -19,6 +19,8 @@ export const studyRecord = pgTable(
     note0: text('note_0').notNull().default(''),
     note1: text('note_1').notNull().default(''),
     note2: text('note_2').notNull().default(''),
+    attempt: text('attempt'),
+    essayDraft: text('essay_draft').notNull().default(''),
     version: integer('version').notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
   },

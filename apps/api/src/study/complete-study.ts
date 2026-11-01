@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import { completeReview, type StudyRecord } from '@atlas/domain';
+import { completeReview, parseAttempt, type StudyRecord } from '@atlas/domain';
 import type { Database } from '../db/database.js';
 import { studyRecord, type StudyRow } from '../db/study-schema.js';
 import { isLevel } from '@atlas/domain';
@@ -38,6 +38,8 @@ export function toStudyRecord(row: StudyRow): StudyRecord {
     lastReviewedOn: row.lastReviewedOn,
     nextReviewOn: row.nextReviewOn,
     notes: [row.note0, row.note1, row.note2],
+    attempt: parseAttempt(row.attempt),
+    essayDraft: row.essayDraft,
     version: row.version,
   };
 }

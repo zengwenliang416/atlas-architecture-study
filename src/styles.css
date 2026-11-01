@@ -816,6 +816,49 @@ button:disabled { cursor: default; transform: none; }
 }
 .interval span + span, .interval li + li { box-shadow: inset 1px 0 0 var(--hairline); }
 .interval span:after, .interval li:after { content: none; }
+.month-load { margin: 0 0 24px; }
+.month-load h3 { margin: 0 0 8px; color: var(--ink); font-size: 16px; font-weight: 500; }
+.month-weekdays, .month-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.month-weekdays { margin-bottom: 4px; }
+.month-weekdays span { color: var(--muted); font-size: 12px; line-height: 16px; }
+.month-cell {
+  min-height: 44px;
+  padding: 4px;
+  border: 1px solid var(--hairline);
+  background: var(--card);
+  font-size: 13px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.month-cell span { display: block; color: var(--secondary); }
+.month-cell b { color: var(--pen); font-weight: 500; }
+.month-cell.is-today { border-left: 2px solid var(--pen); }
+.month-pad { min-height: 44px; }
+.compare-summary {
+  margin: 0 0 16px;
+  padding: 4px 0 4px 12px;
+  border-left: 2px solid var(--pen);
+}
+.compare-summary h3 { margin: 0 0 4px; color: var(--ink); font-size: 16px; font-weight: 500; }
+.compare-summary p, .compare-summary li { margin: 0; color: var(--ink); font-size: 13px; line-height: 20px; }
+.compare-summary ol { margin: 8px 0 0; padding-left: 20px; }
+.essay-draft { margin-top: 16px; }
+.essay-draft h3 { margin: 0 0 4px; color: var(--ink); font-size: 16px; font-weight: 500; }
+.essay-draft p { margin: 0 0 8px; color: var(--muted); font-size: 13px; line-height: 20px; }
+.essay-draft textarea {
+  width: 100%;
+  min-height: 160px;
+  padding: 8px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 16px;
+  line-height: 1.75;
+  resize: vertical;
+}
+.essay-draft textarea:focus { outline: 2px solid var(--ink); outline-offset: 2px; border-color: transparent; }
 .schedule-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 .duebox {
   border: 0;
