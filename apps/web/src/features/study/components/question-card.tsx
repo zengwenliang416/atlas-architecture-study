@@ -232,7 +232,7 @@ export function QuestionCard({
             <div className="concept-intro">{question.concept}</div>
             <div className="diagram" aria-label="可点击的知识概念流程图">
               {question.steps.map((item, index) => (
-                <span key={item[0]}>
+                <span key={`${index}:${item[0]}`}>
                   {index > 0 ? <span className="arrow" aria-hidden="true">→</span> : null}
                   <button type="button" className={`node ${nodeIndex === index ? 'on' : ''}`} aria-pressed={nodeIndex === index} onClick={() => onNode(index)}>{item[0]}</button>
                 </span>
