@@ -22,7 +22,7 @@ export type StudyUiAction =
   | { type: 'keyword'; keyword: string }
   | { type: 'focus'; id: string }
   | { type: 'toggle-reveal'; id: string }
-  | { type: 'reveal-all'; ids: string[] }
+  | { type: 'expand-all' }
   | { type: 'mask-all' }
   | { type: 'blank'; id: string; index: number }
   | { type: 'pick'; key: string; choice: string }
@@ -65,8 +65,8 @@ export function studyUiReducer(state: StudyUiState, action: StudyUiAction): Stud
         : [...state.revealed, action.id];
       return { ...state, revealed };
     }
-    case 'reveal-all':
-      return { ...state, revealed: action.ids, mode: 'all', filter: 'all', keyword: '' };
+    case 'expand-all':
+      return { ...state, mode: 'all', filter: 'all', keyword: '' };
     case 'mask-all':
       return { ...state, revealed: [], mode: 'stems', filter: 'all', keyword: '' };
     case 'blank':

@@ -912,7 +912,10 @@ button:disabled { cursor: default; transform: none; }
   .schedule-panel, .takeaway-grid, .feynman-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 720px) {
-  .app { padding: 0 16px 96px; }
+  html { scroll-padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+  .app { padding: 0 16px calc(112px + env(safe-area-inset-bottom)); }
+  .main { padding-bottom: 48px; }
+  .choice, .reviewbtn { scroll-margin-bottom: calc(88px + env(safe-area-inset-bottom)); }
   .mast-copy h1, .masthead h1 { font-size: 28px; }
   .q-heading { flex-wrap: wrap; }
   .q-heading h2 { font-size: 20px; }

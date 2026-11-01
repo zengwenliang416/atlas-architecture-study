@@ -16,8 +16,8 @@
     "docs/subsystems/api.md": 132,
     "docs/subsystems/bank.md": 107,
     "docs/subsystems/domain.md": 124,
-    "docs/subsystems/static-site.md": 96,
-    "docs/subsystems/web.md": 61,
+    "docs/subsystems/static-site.md": 153,
+    "docs/subsystems/web.md": 78,
     "packages/bank-architecture/AGENTS.md": 65,
     "packages/domain/AGENTS.md": 68,
     "src/AGENTS.md": 56

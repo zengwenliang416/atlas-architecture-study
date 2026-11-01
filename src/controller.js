@@ -15,6 +15,8 @@ const getBlank=q=>q.blanks[activeBlanks[q.id]||0];
 const selectionKey=q=>q.id+'_'+(activeBlanks[q.id]||0);
 const due=q=>db[q.id].next<=day();
 const states={'new':'新学 / 不会','vague':'模糊','mastered':'已掌握'};
+const SCHEDULE_PREVIEW=13;
+const shanghaiClock=()=>new Date().toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false});
 
 function answersSummary(q){return q.blanks.map((b,i)=>`第${i+1}空：${b.letter?b.letter+' · ':''}${b.answer}`).join('　｜　')}
 function optionHTML(q,b,reveal){
@@ -63,7 +65,7 @@ function questionCard(q){
  <div class="q-heading"><div><h2><span class="q-id">${esc(q.id)}</span>${esc(q.title)}</h2><div class="meta-line">${esc(q.kind)}　/　${esc(q.topic)}　·　${q.blanks.length}个填空/设问</div></div>
  <div class="q-actions"><button type="button" class="small-btn reveal" data-reveal="${q.id}" aria-expanded="${reveal}">${reveal?'再次遮挡':'揭晓答案'}</button><button type="button" class="small-btn" data-toggle-feynman="${q.id}">费曼三问</button></div></div>
  <div class="zones">
- <section class="paper"><h3><span class="num">①</span>题目识别 / 正确答案</h3><span class="pill">${esc(q.topic)} · ${esc(q.kind)}</span>
+ <section class="paper"><h3><span class="num">①</span>${reveal?'题目识别 / 正确答案':'题目识别'}</h3><span class="pill">${esc(q.topic)} · ${esc(q.kind)}</span>
  <div class="stem">${esc(q.stem)}</div>${questions}
  ${response?`<div class="response" role="status">${response}</div>`:''}<div class="answer ${reveal?'':'hidden'}">答案：${esc(b.letter||'原题未给字母')} · ${esc(b.answer)}${q.blanks.length>1?`<div style="font-size:13px;font-weight:500;margin-top:4px">全题：${esc(answersSummary(q))}</div>`:''}</div>
  ${!reveal?'<div class="lock">答案和解析先遮着</div>':''}</section>
@@ -97,16 +99,24 @@ function renderTOC(){
 function renderQuestions(){
  const list=eligible();const show=(mode==='all'||mode==='due'||mode==='stems')?list:(list.find(q=>q.id===focusId)?[list.find(q=>q.id===focusId)]:list.slice(0,1));
  if(mode==='focus'&&show[0])focusId=show[0].id;
+ else if(list.length&&!list.some(q=>q.id===focusId))focusId=list[0].id;
  const a=$('questionCards');a.innerHTML=show.length?show.map(questionCard).join(''):'<div class="empty">这个筛选下没有题目</div>';
  const currIndex=list.findIndex(q=>q.id===focusId);
- $('modeLabel').textContent=mode==='all'?'全部展开':mode==='due'?'今日到期':mode==='stems'?'只看题干':'逐题学习';
- $('modeHint').textContent=mode==='focus'?`第 ${list.length?currIndex+1:0} / ${list.length} 题，方向键切题，1 到 4 选择，Enter 揭晓`:`第 ${show.length} / ${DATA.length} 题`;
- $('prevBtn').disabled=mode!=='focus'||currIndex<=0;$('nextBtn').disabled=mode!=='focus'||currIndex>=list.length-1;const mobileCount=DATA.findIndex(q=>q.id===focusId)+1;$('dockCounter').innerHTML='Q'+String(Math.max(1,mobileCount))+' <small>/ '+DATA.length+'</small>';$('mobilePrev').disabled=mode!=='focus'||currIndex<=0;$('mobileNext').disabled=mode!=='focus'||currIndex>=list.length-1;
+ $('modeLabel').textContent=mode==='all'?'全部题目':mode==='due'?'今日到期':mode==='stems'?'只看题干':'逐题学习';
+ $('modeHint').textContent=mode==='focus'?`第 ${list.length&&currIndex>=0?currIndex+1:0} / ${list.length} 题，方向键切题，1 到 4 选择，Enter 揭晓`:`列出 ${show.length} 题`;
+ const dockPos=currIndex<0?0:currIndex+1;
+ $('prevBtn').disabled=currIndex<=0;$('nextBtn').disabled=currIndex<0||currIndex>=list.length-1;$('dockCounter').innerHTML='Q'+dockPos+' <small>/ '+list.length+'</small>';$('mobilePrev').disabled=currIndex<=0;$('mobileNext').disabled=currIndex<0||currIndex>=list.length-1;
+}
+function planRows(items,dateText,overflow){
+ const shown=items.slice(0,SCHEDULE_PREVIEW);
+ const rows=shown.map(q=>`<div class="dueitem"><a href="#${q.id}" data-link="${q.id}">${q.id} ${esc(q.title)}</a><span class="duedate">${dateText(q)}</span></div>`).join('');
+ const rest=items.length-shown.length;
+ return rows+(rest>0?`<p>还有 ${rest} 道。${overflow}</p>`:'');
 }
 function renderPlan(){
  const dueItems=DATA.filter(due);const nextItems=DATA.filter(q=>!due(q)).sort((a,b)=>db[a.id].next.localeCompare(db[b.id].next));
- $('todayList').innerHTML=dueItems.length?dueItems.map(q=>`<div class="dueitem"><a href="#${q.id}" data-link="${q.id}">${q.id} ${esc(q.title)}</a><span class="duedate">到期 ${esc(db[q.id].next)}</span></div>`).join(''):'<p>今天没有到期的题目</p>';
- $('futureList').innerHTML=nextItems.length?nextItems.slice(0,13).map(q=>`<div class="dueitem"><a href="#${q.id}" data-link="${q.id}">${q.id} ${esc(q.title)}</a><span class="duedate">${esc(db[q.id].next)}</span></div>`).join(''):'<p class="lock">暂时没有未来复习安排</p>';
+ $('todayList').innerHTML=dueItems.length?planRows(dueItems,q=>'到期 '+esc(db[q.id].next),'用「今日到期」在目录里逐题看。'):'<p>今天没有到期的题目</p>';
+ $('futureList').innerHTML=nextItems.length?planRows(nextItems,q=>esc(db[q.id].next),''):'<p class="lock">暂时没有未来复习安排</p>';
 }
 function rerender(){recalc();renderTOC();renderQuestions();renderPlan()}
 function jump(id){
@@ -115,11 +125,11 @@ function jump(id){
  focusId=id;mode='focus';rerender();$('questionArea').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function changeBlank(id,index){activeBlanks[id]=index;renderQuestions()}
-function markLevel(id,value){db[id].level=value;db[id].last=new Date().toLocaleString('zh-CN',{hour12:false});persist();rerender();toast(id+' 已标记为 '+states[value])}
+function markLevel(id,value){db[id].level=value;db[id].last=shanghaiClock();persist();rerender();toast(id+' 已标记为 '+states[value])}
 function complete(id){
- const s=db[id];if(s.lastReviewedOn===day()){toast("今天已经复习过这道题，明天继续更有效");return;}s.lastReviewedOn=day();s.count++;s.stage=Math.min(s.stage+1,6);s.next=plusDays(day(),REVIEW_INTERVALS[s.stage]);s.last=new Date().toLocaleString('zh-CN',{hour12:false});persist();rerender();toast(id+' 复习完成，下次 '+s.next);
+ const s=db[id];if(s.lastReviewedOn===day()){toast("今天已经复习过这道题，明天继续更有效");return;}s.lastReviewedOn=day();s.count++;s.stage=Math.min(s.stage+1,6);s.next=plusDays(day(),REVIEW_INTERVALS[s.stage]);s.last=shanghaiClock();persist();rerender();toast(id+' 复习完成，下次 '+s.next);
 }
-function showAll(){mode='all';filter='all';keyword='';$('search').value='';DATA.forEach(q=>revealed.add(q.id));rerender();$('questionArea').scrollIntoView({behavior:'smooth',block:'start'})}
+function showAll(){mode='all';filter='all';keyword='';$('search').value='';rerender();$('questionArea').scrollIntoView({behavior:'smooth',block:'start'})}
 function maskAll(){revealed.clear();mode='stems';filter='all';keyword='';$('search').value='';rerender();$('questionArea').scrollIntoView({behavior:'smooth',block:'start'})}
  $('startBtn').onclick=()=>{revealed.clear();filter='all';keyword='';$('search').value='';focusId='Q1';mode='focus';rerender();$('questionArea').scrollIntoView({behavior:'smooth',block:'start'});toast('先选答案，再揭晓')};
 $('dueBtn').onclick=()=>{filter='due';keyword='';$('search').value='';mode='due';rerender();$('questionArea').scrollIntoView({behavior:'smooth',block:'start'})};
@@ -149,7 +159,7 @@ document.addEventListener('input',e=>{
 async function copyText(text){
  try{if(!navigator.clipboard?.writeText)throw Error('no clipboard');await navigator.clipboard.writeText(text);toast('论文正文已复制')}catch(e){const box=$('fallback');box.style.display='block';box.value=text;box.focus();box.select();try{document.execCommand('copy');toast('内容已复制，必要时可手动复制')}catch(_){toast('请从底部文本框手动复制')}}
 }
-function exportNotes(){const lines=['系统架构设计师 · 对话题库费曼笔记','导出日期：'+new Date().toLocaleString('zh-CN'),'题目总数：'+DATA.length,'======================='];
+function exportNotes(){const lines=['系统架构设计师 · 对话题库费曼笔记','导出日期：'+new Date().toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}),'题目总数：'+DATA.length,'======================='];
  for(const q of DATA){const s=db[q.id];lines.push('',q.id+' '+q.title,'题目：'+q.stem,'答案：'+answersSummary(q),'状态：'+states[s.level]+'；复习次数：'+s.count+'；下一次：'+s.next,'费曼一问：'+(s.notes[0]||'（未填写）'),'费曼二问：'+(s.notes[1]||'（未填写）'),'费曼三问：'+(s.notes[2]||'（未填写）'),'-----------------------')}
  return lines.join('\n')}
 $('exportBtn').onclick=async()=>{

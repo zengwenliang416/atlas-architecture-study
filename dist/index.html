@@ -33,22 +33,22 @@
    <button class="filterchip active" type="button" data-filter="all">全部</button><button class="filterchip" type="button" data-filter="new">不会</button><button class="filterchip" type="button" data-filter="vague">模糊</button><button class="filterchip" type="button" data-filter="mastered">掌握</button><button class="filterchip" type="button" data-filter="due">今日到期</button>
   </div>
   <div class="side-list" id="toc"></div>
-  <div class="side-bottom">到期复习 <strong id="sideDue">39</strong> 道<br>学习记录仅存此浏览器</div>
+  <div class="side-bottom">到期复习 <strong id="sideDue">39</strong> 道<br>学习记录只在这台浏览器</div>
  </aside>
  <main class="main" id="questionArea">
-  <div class="welcome"><div><strong id="modeLabel">逐题学习</strong><p id="modeHint">答案先遮着，选完再揭晓</p></div><div class="mode-actions"><button class="text-action" id="expandBtn" type="button">全部展开</button><button class="text-action" id="stemBtn" type="button">只看题干</button></div><div class="mini-nav"><button class="mini-btn" id="prevBtn" type="button">上一题</button><button class="mini-btn" id="nextBtn" type="button">下一题</button></div></div>
+  <div class="welcome"><div><strong id="modeLabel">逐题学习</strong><p id="modeHint">答案先遮着，选完再揭晓</p></div><div class="mode-actions"><button class="text-action" id="expandBtn" type="button">全部题目</button><button class="text-action" id="stemBtn" type="button">只看题干</button></div><div class="mini-nav"><button class="mini-btn" id="prevBtn" type="button">上一题</button><button class="mini-btn" id="nextBtn" type="button">下一题</button></div></div>
   <div id="questionCards"></div>
  </main>
 </div>
 <section class="schedule" id="schedule">
  <h2>复习间隔</h2>
- <p>本地日期自动计算。新题默认今天到期；完成一轮后安排下一阶段，后续按最后完成日期推进。状态与费曼笔记会自动保存在 localStorage。</p>
+ <p>今天按 Asia/Shanghai 计算。学习记录只留在这台浏览器。新题默认今天到期；完成一轮后安排下一阶段。同一天重复完成不会再推进间隔。</p>
  <div class="interval"><span>当天</span><span>1 天</span><span>2 天</span><span>4 天</span><span>7 天</span><span>15 天</span><span>30 天</span></div>
  <div class="schedule-panel"><div class="duebox"><h3>今天应该复习</h3><div id="todayList"></div></div><div class="duebox"><h3>接下来的计划</h3><div id="futureList"></div></div></div>
 </section>
 <section class="export">
  <h2>费曼笔记</h2>
- <p>将所有题目的三个费曼回答合并成一份纯文本。不会上传服务器，数据只保存在当前浏览器。</p>
+ <p>笔记只保存在这台浏览器。登录后的复习台可以用「导入本机旧记录」把这份记录写入服务器。</p>
  <button class="action" id="exportBtn" type="button">复制全部笔记</button>
  <textarea id="fallback" readonly aria-label="复制失败时手动复制的笔记"></textarea>
 </section>

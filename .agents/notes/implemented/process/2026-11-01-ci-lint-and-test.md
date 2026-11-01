@@ -8,7 +8,7 @@ Status: implemented
 
 ## Decision
 
-`.github/workflows/ci.yml` 在目标分支为 `main` 的拉取请求上，以及推送到 `main` 时运行。`maintenance` 作业执行 `python3 scripts/verify_maintenance.py`。`lint and test` 作业执行 `pnpm install --frozen-lockfile`、`pnpm lint`、`pnpm test`。`pnpm test` 包含 `@atlas/domain` 测试和 `tests/smoke.mjs`。任一作业失败，这次工作流失败。文档门禁与产品脚本都在这一份工作流里。
+`.github/workflows/ci.yml` 在目标分支为 `main` 的拉取请求上，以及推送到 `main` 时运行。`maintenance` 作业执行 `python3 scripts/verify_maintenance.py`。`lint and test` 作业执行 `pnpm install --frozen-lockfile`、`pnpm lint`、`pnpm test`。`pnpm test` 包含 `@atlas/domain` 测试、`tests/smoke.mjs` 和 `tests/startup.mjs`。任一作业失败，这次工作流失败。文档门禁与产品脚本都在这一份工作流里。
 
 ## Alternatives considered
 
