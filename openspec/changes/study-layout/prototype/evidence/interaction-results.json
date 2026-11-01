@@ -1,0 +1,58 @@
+[
+  {
+    "id": "show-setup",
+    "before": "创建账号尚未打开",
+    "after": "创建账号表单进入首屏",
+    "expected_state": "创建账号表单进入首屏",
+    "passed": true,
+    "shot": "evidence/interaction-show-setup.png"
+  },
+  {
+    "id": "show-login",
+    "before": "登录尚未打开",
+    "after": "登录表单进入首屏",
+    "expected_state": "登录表单进入首屏",
+    "passed": true,
+    "shot": "evidence/interaction-show-login.png"
+  },
+  {
+    "id": "show-study",
+    "before": "复习首屏尚未打开",
+    "after": "目录和题目标题同时可见",
+    "expected_state": "目录和题目标题同时可见",
+    "passed": true,
+    "shot": "evidence/interaction-show-study.png"
+  },
+  {
+    "id": "reveal-answer",
+    "before": "解析尚未揭晓",
+    "after": "解析和论文已揭晓",
+    "expected_state": "解析和论文已揭晓",
+    "passed": true,
+    "shot": "evidence/interaction-reveal-answer.png"
+  },
+  {
+    "id": "mark-mastered",
+    "before": "掌握程度尚未标记",
+    "after": "本题已标记掌握",
+    "expected_state": "本题已标记掌握",
+    "passed": true,
+    "shot": "evidence/interaction-mark-mastered.png"
+  },
+  {
+    "id": "show-wrap",
+    "before": "中等宽度尚未打开",
+    "after": "顶栏已换行且目录仍在题目旁",
+    "expected_state": "顶栏已换行且目录仍在题目旁",
+    "passed": true,
+    "shot": "evidence/interaction-show-wrap.png"
+  },
+  {
+    "id": "show-narrow",
+    "before": "窄屏尚未打开",
+    "after": "目录已收成单列",
+    "expected_state": "目录已收成单列",
+    "passed": true,
+    "shot": "evidence/interaction-show-narrow.png"
+  }
+]

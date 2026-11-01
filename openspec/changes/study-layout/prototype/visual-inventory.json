@@ -1,0 +1,223 @@
+{
+  "schema": "specnav.prototype.visualInventory.v1",
+  "version": "1",
+  "discovery_status": "complete",
+  "source_project": "Atlas 复习工作台",
+  "evidence": {
+    "screenshots": [
+      {
+        "path": "evidence/prototype-study-1280.png",
+        "sha256": "d27ec3294918c6a11522c7de5ecbb368adef0473352eb999bccb35b51f09d94b",
+        "viewport": "1440x1200",
+        "theme": "light",
+        "locale": "zh-CN"
+      },
+      {
+        "path": "evidence/prototype-login-1280.png",
+        "sha256": "0b85a279c784bcfb3e11ab737244ea5e9a3a4b46ef8bd151c39d924ed571ad22",
+        "viewport": "1440x1200",
+        "theme": "light",
+        "locale": "zh-CN"
+      },
+      {
+        "path": "evidence/prototype-setup-1280.png",
+        "sha256": "5ee32dd1e4ace0283b7afde32d1833e0c64792839cb166155731d3460c480bc7",
+        "viewport": "1440x1200",
+        "theme": "light",
+        "locale": "zh-CN"
+      },
+      {
+        "path": "evidence/prototype-wrap-980.png",
+        "sha256": "7751fe14c41c7df180d306d0fcb6919fc3fa0ee5290af7fb46e1090b835965db",
+        "viewport": "1440x1200",
+        "theme": "light",
+        "locale": "zh-CN"
+      },
+      {
+        "path": "evidence/prototype-narrow.png",
+        "sha256": "ceae2332c352d5ed99ed17efe629aa6dc4a04d38bd65ebe39041aa21de345298",
+        "viewport": "1440x1200",
+        "theme": "light",
+        "locale": "zh-CN"
+      }
+    ],
+    "runtime_baseline": {
+      "project_commit": "eb3c730ac3528b47b2a50310075eb2c7210d9d0c",
+      "captured_at": "2026-10-12T09:08:52.191Z",
+      "browser": "chromium",
+      "route": "/study",
+      "auth_state": "anonymous",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "capture_digest": "ddfac2bb588ab01cee071a4c717a00c0f4d063b8baf8d8bce6559f63a4cf5274",
+      "screenshots": [
+        {
+          "path": "evidence/project-route.png",
+          "sha256": "ddfac2bb588ab01cee071a4c717a00c0f4d063b8baf8d8bce6559f63a4cf5274"
+        }
+      ],
+      "dom_snapshots": [
+        {
+          "path": "evidence/project-dom.txt",
+          "sha256": "f64b6ce401554decc8fa3f9add692f33c2ec38f081dc74fe81b43df9b3031e72"
+        }
+      ],
+      "accessibility_snapshots": [
+        {
+          "path": "evidence/project-a11y.txt",
+          "sha256": "a24c43ca16a90ab68137c40806cfc4d977ac520ac8557b1390ffcd915358bc95"
+        }
+      ],
+      "computed_styles": [
+        {
+          "path": "evidence/project-computed.json",
+          "sha256": "7e5c58bd8a0b43daaebf987025a7043076a8f75049f588f60300092d7a2b8911"
+        }
+      ]
+    },
+    "routes": [
+      "apps/web/src/app/app.tsx"
+    ],
+    "design_specs": [
+      "openspec/specs/ui-design/design.md"
+    ],
+    "component_sources": [
+      "openspec/changes/study-layout/component-impact-map.json"
+    ],
+    "codegraph_claims": []
+  },
+  "project_shell": {
+    "source": "apps/web/src/features/study/study-page.tsx",
+    "required_elements": [
+      "header",
+      "sidebar",
+      "content",
+      "知识目录",
+      "题目目录"
+    ],
+    "omitted_elements": [],
+    "theme_policy": "light-only, no theme toggle",
+    "i18n_policy": "i18n disabled, authored zh-CN copy only"
+  },
+  "fidelity_contract": {
+    "shell_source": "apps/web/src/features/study/study-page.tsx",
+    "token_source": "apps/web/src/styles/theme.css",
+    "asset_source": "apps/web/src/styles/app.css",
+    "component_source": "apps/web/src/features/study/study-page.tsx",
+    "generic_shell_allowed": false,
+    "metrics": {
+      "sidebar_width_px": 264,
+      "header_height_px": 425,
+      "content_max_width_px": 1552
+    },
+    "bindings": {
+      "font": {
+        "family": "Inter",
+        "source": "apps/web/src/styles/theme.css",
+        "excerpt": "--font-sans: Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", system-ui, sans-serif;"
+      },
+      "measurements": [
+        {
+          "name": "sidebar_width_px",
+          "source": "apps/web/src/styles/theme.css",
+          "excerpt": "--sidebar-width: 264px",
+          "value": 264
+        },
+        {
+          "name": "header_height_px",
+          "source": "apps/web/src/styles/theme.css",
+          "excerpt": "--header-height: 425px",
+          "value": 425
+        },
+        {
+          "name": "content_max_width_px",
+          "source": "apps/web/src/styles/theme.css",
+          "excerpt": "max-width: 1552px",
+          "value": 1552
+        }
+      ],
+      "shell": {
+        "order": [
+          "header",
+          "sidebar",
+          "content"
+        ],
+        "source": "apps/web/src/features/study/study-page.tsx",
+        "excerpt": "data-specnav-shell-part=\"header\"\u003e\n        \u003cdiv className=\"hero-chrome\"\u003e\n          \u003cdiv className=\"brandline\"\u003e\u003cspan className=\"brandmark\"\u003ea.\u003c/span\u003e\u003cspan\u003eARCH / ATLAS\u003c/span\u003e\u003cspan className=\"brand-divider\"\u003e\u003c/span\u003e\u003cspan className=\"brand-cn\"\u003e系统架构设计师 · 个人复习工作台\u003c/span\u003e\u003c/div\u003e\n          \u003cdiv className=\"hero-index\"\u003e\n            \u003cspan\u003eVOLUME 01 / Q01—Q39\u003c/span\u003e\n            \u003cbutton type=\"button\" className=\"session-chip\" onClick={() =\u003e { void signOut().then(onSignedOut); \u007d\u007d\u003e{email} · 退出\u003c/button\u003e\n          \u003c/div\u003e\n        \u003c/div\u003e\n        \u003cdiv className=\"hero-content\"\u003e\n          \u003cdiv className=\"hero-copy\"\u003e\n            \u003cdiv className=\"hero-eyebrow\"\u003eSTUDY ATLAS · 知识图谱 / 记忆系统\u003c/div\u003e\n            \u003ch1\u003e系统架构设计师\u003cbr /\u003e\u003cspan className=\"hero-em\"\u003e对话题库复习\u003c/span\u003e\u003c/h1\u003e\n            \u003cp className=\"hero-description\"\u003e从知道答案，到真正理解。39 道对话真题与知识练习，使用四区辨析、费曼讲解和间隔复习，把每个知识点变成长期记忆。\u003c/p\u003e\n            \u003cdiv className=\"hero-inline\"\u003e\u003cspan\u003e\u003ci\u003e\u003c/i\u003e \u003cb\u003e39\u003c/b\u003e 道完整讲解\u003c/span\u003e\u003cspan\u003e\u003ci\u003e\u003c/i\u003e 登录后阅读解析\u003c/span\u003e\u003cspan\u003e\u003ci\u003e\u003c/i\u003e 学习记录以服务器为准\u003c/span\u003e\u003c/div\u003e\n          \u003c/div\u003e\n          \u003cdiv className=\"hero-art\" aria-hidden=\"true\"\u003e\n            \u003csvg viewBox=\"0 0 470 308\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\"\u003e\n              \u003cg stroke=\"#d6e1f5\" strokeWidth=\"1\"\u003e\u003cpath d=\"M18 52H455M18 102H455M18 152H455M18 202H455M18 252H455\" /\u003e\u003cpath d=\"M68 20V290M118 20V290M168 20V290M218 20V290M268 20V290M318 20V290M368 20V290M418 20V290\" /\u003e\u003c/g\u003e\n              \u003cg stroke=\"#b2c7e9\" strokeWidth=\"1.2\"\u003e\u003ccircle cx=\"236\" cy=\"155\" r=\"124\" strokeDasharray=\"4 7\" /\u003e\u003ccircle cx=\"236\" cy=\"155\" r=\"91\" /\u003e\u003ccircle cx=\"236\" cy=\"155\" r=\"55\" strokeDasharray=\"2 8\" /\u003e\u003c/g\u003e\n              \u003cpath d=\"M94 182L177 116L233 164L321 86L408 141\" stroke=\"#2352b5\" strokeWidth=\"2.8\" strokeLinecap=\"round\" strokeLinejoin=\"round\" /\u003e\n              \u003cpath d=\"M104 224L180 179L258 212L349 141L416 198\" stroke=\"#de6557\" strokeWidth=\"1.7\" strokeLinecap=\"round\" strokeDasharray=\"5 8\" /\u003e\n              \u003cg fill=\"#fff\" stroke=\"#2253b7\" strokeWidth=\"2\"\u003e\u003ccircle cx=\"94\" cy=\"182\" r=\"9\" /\u003e\u003ccircle cx=\"177\" cy=\"116\" r=\"9\" /\u003e\u003ccircle cx=\"233\" cy=\"164\" r=\"9\" /\u003e\u003ccircle cx=\"321\" cy=\"86\" r=\"9\" /\u003e\u003ccircle cx=\"408\" cy=\"141\" r=\"9\" /\u003e\u003c/g\u003e\n              \u003cg fill=\"#fff\" stroke=\"#de6557\" strokeWidth=\"2\"\u003e\u003ccircle cx=\"104\" cy=\"224\" r=\"5\" /\u003e\u003ccircle cx=\"180\" cy=\"179\" r=\"5\" /\u003e\u003ccircle cx=\"258\" cy=\"212\" r=\"5\" /\u003e\u003ccircle cx=\"349\" cy=\"141\" r=\"5\" /\u003e\u003ccircle cx=\"416\" cy=\"198\" r=\"5\" /\u003e\u003c/g\u003e\n              \u003crect x=\"201\" y=\"130\" width=\"69\" height=\"48\" rx=\"5\" fill=\"#224eac\" /\u003e\u003ctext x=\"235.5\" y=\"160.5\" textAnchor=\"middle\" fill=\"#fff\" fontFamily=\"Georgia\" fontSize=\"25\"\u003e4+1\u003c/text\u003e\n              \u003cg fill=\"#2253b7\" fontSize=\"10\" fontFamily=\"Georgia\" letterSpacing=\"1\"\u003e\u003ctext x=\"94\" y=\"164\" textAnchor=\"middle\"\u003eINPUT\u003c/text\u003e\u003ctext x=\"177\" y=\"98\" textAnchor=\"middle\"\u003eMODEL\u003c/text\u003e\u003ctext x=\"319\" y=\"66\" textAnchor=\"middle\"\u003eRECALL\u003c/text\u003e\u003ctext x=\"408\" y=\"123\" textAnchor=\"middle\"\u003eRETAIN\u003c/text\u003e\u003c/g\u003e\n              \u003cpath d=\"M48 292H431\" stroke=\"#19439e\" strokeWidth=\"1.3\" /\u003e\u003ctext x=\"48\" y=\"284\" fill=\"#7593c2\" fontSize=\"11\" fontFamily=\"Georgia\" letterSpacing=\"3\"\u003eUNDERSTAND  /  RETAIN  /  EVOLVE\u003c/text\u003e\n            \u003c/svg\u003e\n          \u003c/div\u003e\n        \u003c/div\u003e\n        \u003cdiv className=\"hero-foot\"\u003e\u003cspan\u003e\u003cstrong\u003eATLAS NO.01\u003c/strong\u003e　/　把知识点变成自己的语言\u003c/span\u003e\u003cspan className=\"hero-progress\"\u003e\u003cspan id=\"heroPct\"\u003e{masteredPct}% 已掌握\u003c/span\u003e\u003cspan className=\"hero-progress-track\"\u003e\u003cspan id=\"heroProgress\" className=\"hero-progress-bar\" style=\u007b\u007b width: `${masteredPct}%` \u007d\u007d\u003e\u003c/span\u003e\u003c/span\u003e\u003c/span\u003e\u003c/div\u003e\n      \u003c/header\u003e\n      \u003csection className=\"dashboard\" aria-label=\"学习统计\"\u003e\n        \u003cdiv className=\"metric\"\u003e\u003cspan\u003e收录题目 / TOTAL\u003c/span\u003e\u003cstrong id=\"totalCount\"\u003e{questions.length}\u003c/strong\u003e\u003cem className=\"metric-kicker\"\u003e01\u003c/em\u003e\u003c/div\u003e\n        \u003cdiv className=\"metric\"\u003e\u003cspan\u003e已掌握 / MASTERED\u003c/span\u003e\u003cstrong className=\"green\" id=\"knownCount\"\u003e{counters.mastered}\u003c/strong\u003e\u003cem className=\"metric-kicker\"\u003e02\u003c/em\u003e\u003c/div\u003e\n        \u003cdiv className=\"metric\"\u003e\u003cspan\u003e待巩固 / UNCERTAIN\u003c/span\u003e\u003cstrong id=\"vagueCount\"\u003e{counters.vague}\u003c/strong\u003e\u003cem className=\"metric-kicker\"\u003e03\u003c/em\u003e\u003c/div\u003e\n        \u003cdiv className=\"metric\"\u003e\u003cspan\u003e新学 / TO LEARN\u003c/span\u003e\u003cstrong className=\"red\" id=\"newCount\"\u003e{counters.new}\u003c/strong\u003e\u003cem className=\"metric-kicker\"\u003e04\u003c/em\u003e\u003c/div\u003e\n      \u003c/section\u003e\n      \u003cdiv className=\"controls\"\u003e\n        \u003cbutton type=\"button\" className=\"action primary\" id=\"startBtn\" onClick={() =\u003e { dispatch({ type: 'start' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); toast('自测开始，请先选答案'); \u007d\u007d\u003e开始自测 \u003cspan className=\"btn-arrow\" aria-hidden=\"true\"\u003e↗\u003c/span\u003e\u003c/button\u003e\n        \u003cbutton type=\"button\" className=\"action\" id=\"dueBtn\" onClick={() =\u003e { dispatch({ type: 'filter', filter: 'due' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); \u007d\u007d\u003e今日复习 \u003cspan className=\"btn-count\" id=\"dueNum\"\u003e{dueCount}\u003c/span\u003e\u003c/button\u003e\n        \u003cbutton type=\"button\" className=\"action\" id=\"expandBtn\" onClick={() =\u003e { dispatch({ type: 'reveal-all', ids: questions.map((question) =\u003e question.id) }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); \u007d\u007d\u003e全部展开 \u003cspan aria-hidden=\"true\"\u003e＋\u003c/span\u003e\u003c/button\u003e\n        \u003cbutton type=\"button\" className=\"action\" id=\"stemBtn\" onClick={() =\u003e { dispatch({ type: 'mask-all' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); \u007d\u007d\u003e只看题干 \u003cspan aria-hidden=\"true\"\u003e◌\u003c/span\u003e\u003c/button\u003e\n        \u003cspan className=\"controls-label\"\u003eLEARN / TEST / RECALL\u003c/span\u003e\n      \u003c/div\u003e\n      \u003cdiv className=\"workspace\"\u003e\n        \u003caside className={`sidebar ${ui.sidebarCollapsed ? 'collapsed' : ''}`} aria-label=\"题目目录\" data-specnav-shell-part=\"sidebar\"\u003e\n          \u003cdiv className=\"side-header\"\u003e\n            \u003cdiv className=\"side-title\"\u003e知识目录 \u003cspan style=\u007b\u007b fontSize: 12, fontWeight: 400, color: 'var(--muted)' \u007d\u007d\u003e/ {questions.length}\u003c/span\u003e\u003c/div\u003e\n            \u003cbutton className=\"mini-btn\" id=\"toggleSidebar\" type=\"button\" aria-expanded={!ui.sidebarCollapsed} onClick={() =\u003e dispatch({ type: 'sidebar' })}\u003e{ui.sidebarCollapsed ? '展开目录 ↓' : '收起目录 ↑'}\u003c/button\u003e\n          \u003c/div\u003e\n          \u003cinput id=\"search\" className=\"search\" type=\"search\" placeholder=\"搜索题干、知识点或选项\" aria-label=\"搜索题目\" value={ui.keyword} onChange={(event) =\u003e dispatch({ type: 'keyword', keyword: event.target.value })} /\u003e\n          \u003cdiv className=\"filterrow\" id=\"filters\"\u003e\n            {(['all', 'new', 'vague', 'mastered', 'due'] as LevelFilter[]).map((filter) =\u003e (\n              \u003cbutton type=\"button\" key={filter} className={`filterchip ${ui.filter === filter ? 'active' : ''}`} onClick={() =\u003e dispatch({ type: 'filter', filter })}\u003e\n                \u007b\u007b all: '全部', new: '不会', vague: '模糊', mastered: '掌握', due: '今日到期' }[filter]}\n              \u003c/button\u003e\n            ))}\n          \u003c/div\u003e\n          \u003cdiv className=\"side-list\" id=\"toc\"\u003e\n            {visible.length === 0 ? \u003cdiv className=\"empty\"\u003e没有匹配的题目\u003c/div\u003e : visible.map((question) =\u003e (\n              \u003cbutton type=\"button\" key={question.id} className={`toc-item ${question.id === focusId ? 'active' : ''}`} onClick={() =\u003e dispatch({ type: 'jump', id: question.id, matches: true })}\u003e\n                \u003cspan className=\"toc-id\"\u003e{question.id}\u003c/span\u003e\n                \u003cspan className=\"toc-name\"\u003e{question.title}\u003c/span\u003e\n                \u003cspan className={`dot ${recordOf(question).level}`}\u003e\u003c/span\u003e\n              \u003c/button\u003e\n            ))}\n          \u003c/div\u003e\n          \u003cdiv className=\"side-bottom\"\u003e到期复习 \u003cstrong id=\"sideDue\"\u003e{dueCount}\u003c/strong\u003e 道\u003cbr /\u003e今日按 Asia/Shanghai 计算\u003c/div\u003e\n        \u003c/aside\u003e\n        \u003cmain className=\"main\" id=\"questionArea\" data-specnav-shell-part=\"content\""
+      },
+      "navigation": [
+        {
+          "text": "知识目录",
+          "source": "apps/web/src/i18n/locales/zh-CN.json",
+          "excerpt": "\"toc\": \"知识目录\""
+        },
+        {
+          "text": "全部",
+          "source": "apps/web/src/i18n/locales/zh-CN.json",
+          "excerpt": "\"filterAll\": \"全部\""
+        },
+        {
+          "text": "到期复习",
+          "source": "apps/web/src/i18n/locales/zh-CN.json",
+          "excerpt": "\"due\": \"到期复习\""
+        }
+      ]
+    }
+  },
+  "business_surface": {
+    "screens": [
+      "创建账号",
+      "登录",
+      "复习首屏"
+    ],
+    "fields": [
+      "称呼",
+      "邮箱",
+      "密码",
+      "题干",
+      "选项",
+      "费曼三问",
+      "掌握程度"
+    ],
+    "actions": [
+      "创建并登录",
+      "登录",
+      "退出",
+      "开始自测",
+      "今日复习",
+      "全部展开",
+      "只看题干",
+      "揭晓答案"
+    ],
+    "states": [
+      "populated",
+      "permission",
+      "revealed"
+    ]
+  },
+  "verification_matrix": {
+    "viewports": [
+      "1280x800",
+      "980x800",
+      "390x800"
+    ],
+    "theme_modes": [
+      "light"
+    ],
+    "locales": [
+      "zh-CN"
+    ],
+    "states": [
+      "populated",
+      "permission",
+      "revealed"
+    ]
+  },
+  "unsupported_capabilities": [
+    "theme-toggle",
+    "locale-switch",
+    "dark-theme"
+  ]
+}

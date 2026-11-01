@@ -1,0 +1,5 @@
+{
+  "route": "/study",
+  "auth_state": "anonymous",
+  "note": "Anonymous /study renders the sign-in form. The study shell is behind login."
+}

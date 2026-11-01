@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer } from 'react';
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BANK_ID, DATA } from '@atlas/bank-architecture';
 import {
@@ -34,6 +34,66 @@ const LEVEL_LABEL: Record<Level, string> = {
   vague: '模糊',
   mastered: '已掌握',
 };
+const TOC_ROW = 32;
+const TOC_OVERSCAN = 4;
+const SCHEDULE_PREVIEW = 13;
+
+function TocList({
+  questions,
+  focusId,
+  levelOf,
+  onJump,
+}: {
+  questions: Question[];
+  focusId: string;
+  levelOf: (question: Question) => string;
+  onJump: (id: string) => void;
+}) {
+  const scroller = useRef<HTMLDivElement>(null);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [viewport, setViewport] = useState(320);
+  const focusIndex = questions.findIndex((question) => question.id === focusId);
+
+  useEffect(() => {
+    const element = scroller.current;
+    if (!element) return;
+    const measure = () => setViewport(element.clientHeight || 320);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const element = scroller.current;
+    if (!element || focusIndex < 0) return;
+    const top = focusIndex * TOC_ROW;
+    const bottom = top + TOC_ROW;
+    if (top < element.scrollTop) element.scrollTop = top;
+    else if (bottom > element.scrollTop + element.clientHeight) element.scrollTop = Math.max(0, bottom - element.clientHeight);
+  }, [focusIndex, questions.length]);
+
+  const start = Math.max(0, Math.floor(scrollTop / TOC_ROW) - TOC_OVERSCAN);
+  const end = Math.min(questions.length, Math.ceil((scrollTop + viewport) / TOC_ROW) + TOC_OVERSCAN);
+
+  return (
+    <div className="side-list" id="toc" ref={scroller} onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}>
+      {questions.length === 0 ? <div className="empty">没有匹配的题目</div> : (
+        <div className="toc-spacer" style={{ height: questions.length * TOC_ROW }}>
+          <div className="toc-window" style={{ transform: `translateY(${start * TOC_ROW}px)` }}>
+            {questions.slice(start, end).map((question) => (
+              <button type="button" key={question.id} className={`toc-item ${question.id === focusId ? 'active' : ''}`} onClick={() => onJump(question.id)}>
+                <span className="toc-id">{question.id}</span>
+                <span className="toc-name">{question.title}</span>
+                <span className={`dot ${levelOf(question)}`}></span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function answersSummary(question: Question): string {
   return question.blanks
@@ -71,16 +131,11 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
   for (const question of questions) counters[recordOf(question).level] += 1;
   const dueCount = questions.filter((question) => isDue(recordOf(question).nextReviewOn, today)).length;
   const masteredPct = questions.length === 0 ? 0 : Math.round((counters.mastered / questions.length) * 100);
-  const shown = ui.mode === 'focus'
-    ? [visible.find((question) => question.id === ui.focusId) ?? visible[0]].filter((question): question is Question => Boolean(question))
-    : visible;
-  const focusId = ui.mode === 'focus' && shown[0] ? shown[0].id : ui.focusId;
-  const focusIndex = visible.findIndex((question) => question.id === focusId);
+  const current = visible.find((question) => question.id === ui.focusId) ?? visible[0];
+  const shown = current ? [current] : [];
+  const focusId = current?.id ?? ui.focusId;
+  const focusIndex = current ? visible.findIndex((question) => question.id === current.id) : -1;
   const mobileIndex = Math.max(1, questions.findIndex((question) => question.id === focusId) + 1);
-
-  useEffect(() => {
-    dispatch({ type: 'sidebar-set', collapsed: window.matchMedia(`(max-width:${850}px)`).matches });
-  }, []);
 
   useEffect(() => {
     if (!ui.toast) return;
@@ -93,7 +148,6 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
       const target = event.target as HTMLElement | null;
       if (event.ctrlKey || event.metaKey || event.altKey || target?.isContentEditable) return;
       if (target && ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(target.tagName)) return;
-      if (ui.mode !== 'focus') return;
       if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
         event.preventDefault();
         const next = visible[focusIndex + (event.key === 'ArrowLeft' ? -1 : 1)];
@@ -113,7 +167,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [ui.mode, ui.activeBlanks, visible, focusIndex, focusId, questions]);
+  }, [ui.activeBlanks, visible, focusIndex, focusId, questions]);
 
   function toast(message: string) {
     dispatch({ type: 'toast', message });
@@ -228,58 +282,28 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
     .sort((a, b) => recordOf(a).nextReviewOn.localeCompare(recordOf(b).nextReviewOn))
     .slice(0, 13);
   const dueQuestions = questions.filter((question) => isDue(recordOf(question).nextReviewOn, today));
-  const modeLabel = ui.mode === 'all' ? '全部展开 · 逐题复习' : ui.mode === 'due' ? '今日到期 · 集中复习' : ui.mode === 'stems' ? '只看题干 · 集中自测' : '逐题学习 · 四区复习界面';
+  const modeLabel = ui.mode === 'stems' ? '只看题干 · 集中自测' : ui.filter === 'due' || ui.mode === 'due' ? '今日到期 · 集中复习' : '逐题学习 · 四区复习界面';
+  const duePreview = dueQuestions.slice(0, SCHEDULE_PREVIEW);
 
   return (
     <div className="app" id="top">
-      <header className="top" aria-label="复习工作台首页" data-specnav-shell-part="header">
-        <div className="hero-chrome">
-          <div className="brandline"><span className="brandmark">a.</span><span>ARCH / ATLAS</span><span className="brand-divider"></span><span className="brand-cn">系统架构设计师 · 个人复习工作台</span></div>
-          <div className="hero-index">
-            <span>VOLUME 01 / Q01—Q39</span>
-            <button type="button" className="session-chip" onClick={() => { void signOut().then(onSignedOut); }}>{email} · 退出</button>
-          </div>
+      <header className="top study-bar" aria-label="复习工作台" data-specnav-shell-part="header">
+        <div className="brandline"><span className="brandmark">a.</span><span>ARCH / ATLAS</span></div>
+        <div className="study-progress">
+          <span id="heroPct">{masteredPct}% 已掌握</span>
+          <span className="hero-progress-track"><span id="heroProgress" className="hero-progress-bar" style={{ width: `${masteredPct}%` }}></span></span>
         </div>
-        <div className="hero-content">
-          <div className="hero-copy">
-            <div className="hero-eyebrow">STUDY ATLAS · 知识图谱 / 记忆系统</div>
-            <h1>系统架构设计师<br /><span className="hero-em">对话题库复习</span></h1>
-            <p className="hero-description">从知道答案，到真正理解。39 道对话真题与知识练习，使用四区辨析、费曼讲解和间隔复习，把每个知识点变成长期记忆。</p>
-            <div className="hero-inline"><span><i></i> <b>39</b> 道完整讲解</span><span><i></i> 登录后阅读解析</span><span><i></i> 学习记录以服务器为准</span></div>
-          </div>
-          <div className="hero-art" aria-hidden="true">
-            <svg viewBox="0 0 470 308" xmlns="http://www.w3.org/2000/svg" fill="none">
-              <g stroke="#d6e1f5" strokeWidth="1"><path d="M18 52H455M18 102H455M18 152H455M18 202H455M18 252H455" /><path d="M68 20V290M118 20V290M168 20V290M218 20V290M268 20V290M318 20V290M368 20V290M418 20V290" /></g>
-              <g stroke="#b2c7e9" strokeWidth="1.2"><circle cx="236" cy="155" r="124" strokeDasharray="4 7" /><circle cx="236" cy="155" r="91" /><circle cx="236" cy="155" r="55" strokeDasharray="2 8" /></g>
-              <path d="M94 182L177 116L233 164L321 86L408 141" stroke="#2352b5" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M104 224L180 179L258 212L349 141L416 198" stroke="#de6557" strokeWidth="1.7" strokeLinecap="round" strokeDasharray="5 8" />
-              <g fill="#fff" stroke="#2253b7" strokeWidth="2"><circle cx="94" cy="182" r="9" /><circle cx="177" cy="116" r="9" /><circle cx="233" cy="164" r="9" /><circle cx="321" cy="86" r="9" /><circle cx="408" cy="141" r="9" /></g>
-              <g fill="#fff" stroke="#de6557" strokeWidth="2"><circle cx="104" cy="224" r="5" /><circle cx="180" cy="179" r="5" /><circle cx="258" cy="212" r="5" /><circle cx="349" cy="141" r="5" /><circle cx="416" cy="198" r="5" /></g>
-              <rect x="201" y="130" width="69" height="48" rx="5" fill="#224eac" /><text x="235.5" y="160.5" textAnchor="middle" fill="#fff" fontFamily="Georgia" fontSize="25">4+1</text>
-              <g fill="#2253b7" fontSize="10" fontFamily="Georgia" letterSpacing="1"><text x="94" y="164" textAnchor="middle">INPUT</text><text x="177" y="98" textAnchor="middle">MODEL</text><text x="319" y="66" textAnchor="middle">RECALL</text><text x="408" y="123" textAnchor="middle">RETAIN</text></g>
-              <path d="M48 292H431" stroke="#19439e" strokeWidth="1.3" /><text x="48" y="284" fill="#7593c2" fontSize="11" fontFamily="Georgia" letterSpacing="3">UNDERSTAND  /  RETAIN  /  EVOLVE</text>
-            </svg>
-          </div>
+        <p className="study-counts">收录 <b id="totalCount">{questions.length}</b> · 已掌握 <b className="green" id="knownCount">{counters.mastered}</b> · 待巩固 <b id="vagueCount">{counters.vague}</b> · 新学 <b id="newCount">{counters.new}</b></p>
+        <div className="study-actions">
+          <button type="button" className="action primary" id="startBtn" onClick={() => { dispatch({ type: 'start' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); toast('自测开始，请先选答案'); }}>开始自测</button>
+          <button type="button" className="text-action" id="dueBtn" onClick={() => { dispatch({ type: 'filter', filter: 'due' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>今日复习 <b id="dueNum">{dueCount}</b></button>
+          <button type="button" className="text-action quiet session-chip" title={email} onClick={() => { void signOut().then(onSignedOut); }}>退出</button>
         </div>
-        <div className="hero-foot"><span><strong>ATLAS NO.01</strong>　/　把知识点变成自己的语言</span><span className="hero-progress"><span id="heroPct">{masteredPct}% 已掌握</span><span className="hero-progress-track"><span id="heroProgress" className="hero-progress-bar" style={{ width: `${masteredPct}%` }}></span></span></span></div>
       </header>
-      <section className="dashboard" aria-label="学习统计">
-        <div className="metric"><span>收录题目 / TOTAL</span><strong id="totalCount">{questions.length}</strong><em className="metric-kicker">01</em></div>
-        <div className="metric"><span>已掌握 / MASTERED</span><strong className="green" id="knownCount">{counters.mastered}</strong><em className="metric-kicker">02</em></div>
-        <div className="metric"><span>待巩固 / UNCERTAIN</span><strong id="vagueCount">{counters.vague}</strong><em className="metric-kicker">03</em></div>
-        <div className="metric"><span>新学 / TO LEARN</span><strong className="red" id="newCount">{counters.new}</strong><em className="metric-kicker">04</em></div>
-      </section>
-      <div className="controls">
-        <button type="button" className="action primary" id="startBtn" onClick={() => { dispatch({ type: 'start' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); toast('自测开始，请先选答案'); }}>开始自测 <span className="btn-arrow" aria-hidden="true">↗</span></button>
-        <button type="button" className="action" id="dueBtn" onClick={() => { dispatch({ type: 'filter', filter: 'due' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>今日复习 <span className="btn-count" id="dueNum">{dueCount}</span></button>
-        <button type="button" className="action" id="expandBtn" onClick={() => { dispatch({ type: 'reveal-all', ids: questions.map((question) => question.id) }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>全部展开 <span aria-hidden="true">＋</span></button>
-        <button type="button" className="action" id="stemBtn" onClick={() => { dispatch({ type: 'mask-all' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>只看题干 <span aria-hidden="true">◌</span></button>
-        <span className="controls-label">LEARN / TEST / RECALL</span>
-      </div>
       <div className="workspace">
         <aside className={`sidebar ${ui.sidebarCollapsed ? 'collapsed' : ''}`} aria-label="题目目录" data-specnav-shell-part="sidebar">
           <div className="side-header">
-            <div className="side-title">知识目录 <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--muted)' }}>/ {questions.length}</span></div>
+            <div className="side-title">知识目录 <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--muted)' }}>/ {visible.length}</span></div>
             <button className="mini-btn" id="toggleSidebar" type="button" aria-expanded={!ui.sidebarCollapsed} onClick={() => dispatch({ type: 'sidebar' })}>{ui.sidebarCollapsed ? '展开目录 ↓' : '收起目录 ↑'}</button>
           </div>
           <input id="search" className="search" type="search" placeholder="搜索题干、知识点或选项" aria-label="搜索题目" value={ui.keyword} onChange={(event) => dispatch({ type: 'keyword', keyword: event.target.value })} />
@@ -290,26 +314,22 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
               </button>
             ))}
           </div>
-          <div className="side-list" id="toc">
-            {visible.length === 0 ? <div className="empty">没有匹配的题目</div> : visible.map((question) => (
-              <button type="button" key={question.id} className={`toc-item ${question.id === focusId ? 'active' : ''}`} onClick={() => dispatch({ type: 'jump', id: question.id, matches: true })}>
-                <span className="toc-id">{question.id}</span>
-                <span className="toc-name">{question.title}</span>
-                <span className={`dot ${recordOf(question).level}`}></span>
-              </button>
-            ))}
-          </div>
+          <TocList questions={visible} focusId={focusId} levelOf={(question) => recordOf(question).level} onJump={(id) => dispatch({ type: 'jump', id, matches: true })} />
           <div className="side-bottom">到期复习 <strong id="sideDue">{dueCount}</strong> 道<br />今日按 Asia/Shanghai 计算</div>
         </aside>
         <main className="main" id="questionArea" data-specnav-shell-part="content">
           <div className="welcome">
             <div>
               <strong id="modeLabel">{modeLabel}</strong>
-              <p id="modeHint">当前显示 {shown.length} / {questions.length} 题 · {ui.mode === 'focus' ? '点选上/下一题切换 · ←/→ 切题，数字1—4选项，Enter揭晓' : '可直接向下滚动浏览'}</p>
+              <p id="modeHint">第 {visible.length === 0 ? 0 : focusIndex + 1} / {visible.length} 题 · ←/→ 切题，数字1—4选项，Enter揭晓</p>
+            </div>
+            <div className="mode-actions">
+              <button type="button" className="text-action" id="expandBtn" onClick={() => { dispatch({ type: 'reveal-all', ids: questions.map((question) => question.id) }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>全部展开</button>
+              <button type="button" className="text-action" id="stemBtn" onClick={() => { dispatch({ type: 'mask-all' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>只看题干</button>
             </div>
             <div className="mini-nav">
-              <button type="button" className="mini-btn" id="prevBtn" disabled={ui.mode !== 'focus' || focusIndex <= 0} onClick={() => { const previous = visible[focusIndex - 1]; if (previous) dispatch({ type: 'jump', id: previous.id, matches: true }); }}>← 上一题</button>
-              <button type="button" className="mini-btn" id="nextBtn" disabled={ui.mode !== 'focus' || focusIndex >= visible.length - 1} onClick={() => { const next = visible[focusIndex + 1]; if (next) dispatch({ type: 'jump', id: next.id, matches: true }); }}>下一题 →</button>
+              <button type="button" className="mini-btn" id="prevBtn" disabled={focusIndex <= 0} onClick={() => { const previous = visible[focusIndex - 1]; if (previous) dispatch({ type: 'jump', id: previous.id, matches: true }); }}>← 上一题</button>
+              <button type="button" className="mini-btn" id="nextBtn" disabled={focusIndex < 0 || focusIndex >= visible.length - 1} onClick={() => { const next = visible[focusIndex + 1]; if (next) dispatch({ type: 'jump', id: next.id, matches: true }); }}>下一题 →</button>
             </div>
           </div>
           <div id="questionCards">
@@ -355,9 +375,10 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
           <div className="duebox">
             <h3>今天应该复习</h3>
             <div id="todayList">
-              {dueQuestions.length === 0 ? <p className="green">今天暂无到期题目，继续保持！</p> : dueQuestions.map((question) => (
+              {dueQuestions.length === 0 ? <p className="green">今天暂无到期题目，继续保持！</p> : duePreview.map((question) => (
                 <div className="dueitem" key={question.id}><a href={`#${question.id}`} onClick={(event) => { event.preventDefault(); dispatch({ type: 'jump', id: question.id, matches: matchesQuestion(question, recordOf(question), { filter: ui.filter, keyword: ui.keyword, today }) }); }}>{question.id} {question.title}</a><span className="duedate">到期 {recordOf(question).nextReviewOn}</span></div>
               ))}
+              {dueQuestions.length > SCHEDULE_PREVIEW ? <p>还有 {dueQuestions.length - SCHEDULE_PREVIEW} 道。用「今日到期」在目录里逐题看。</p> : null}
             </div>
           </div>
           <div className="duebox">
@@ -383,9 +404,9 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
         <textarea id="fallback" readOnly aria-label="复制失败时手动复制的笔记"></textarea>
       </section>
       <nav className="mobile-dock" aria-label="移动端题目切换">
-        <button id="mobilePrev" type="button" disabled={ui.mode !== 'focus' || focusIndex <= 0} onClick={() => { const previous = visible[focusIndex - 1]; if (previous) dispatch({ type: 'jump', id: previous.id, matches: true }); }}>← 上一题</button>
+        <button id="mobilePrev" type="button" disabled={focusIndex <= 0} onClick={() => { const previous = visible[focusIndex - 1]; if (previous) dispatch({ type: 'jump', id: previous.id, matches: true }); }}>← 上一题</button>
         <div className="dock-center" id="dockCounter">Q{String(mobileIndex).padStart(2, '0')} <small>/ {questions.length}</small></div>
-        <button id="mobileNext" type="button" disabled={ui.mode !== 'focus' || focusIndex >= visible.length - 1} onClick={() => { const next = visible[focusIndex + 1]; if (next) dispatch({ type: 'jump', id: next.id, matches: true }); }}>下一题 →</button>
+        <button id="mobileNext" type="button" disabled={focusIndex < 0 || focusIndex >= visible.length - 1} onClick={() => { const next = visible[focusIndex + 1]; if (next) dispatch({ type: 'jump', id: next.id, matches: true }); }}>下一题 →</button>
       </nav>
       <button id="jumpTop" type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} aria-label="返回顶部">↑ 顶部</button>
       <Toast message={ui.toast} />

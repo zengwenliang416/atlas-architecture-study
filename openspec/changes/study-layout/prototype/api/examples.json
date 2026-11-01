@@ -1,0 +1,87 @@
+{
+  "change": "study-layout",
+  "statement": "排版不改变任何请求或响应字段。下面的样例记录现行契约，供对照，不提出新字段。",
+  "auth": "除 GET /api/health 与 GET /api/setup/status 外，题库和学习记录都需要登录会话。首个账号创建后，公开注册保持关闭。",
+  "endpoints": [
+    {
+      "id": "setup-status",
+      "method": "GET",
+      "path": "/api/setup/status",
+      "auth": "none",
+      "response": { "registrationOpen": false }
+    },
+    {
+      "id": "setup",
+      "method": "POST",
+      "path": "/api/setup",
+      "auth": "none",
+      "request": { "email": "owner@example.com", "password": "example-password", "name": "主人" },
+      "responses": {
+        "201": { "ok": true },
+        "403": { "code": "registration_closed", "detail": "首个账号已存在，公开注册已关闭" }
+      }
+    },
+    {
+      "id": "sign-in",
+      "method": "POST",
+      "path": "/api/auth/sign-in/email",
+      "auth": "none",
+      "request": { "email": "owner@example.com", "password": "example-password" },
+      "responses": {
+        "200": { "note": "Set-Cookie 会话，响应体沿用 Better Auth" },
+        "401": { "message": "Invalid email or password", "code": "INVALID_EMAIL_OR_PASSWORD" }
+      }
+    },
+    {
+      "id": "me",
+      "method": "GET",
+      "path": "/api/me",
+      "auth": "session",
+      "responses": {
+        "200": { "id": "user-id", "email": "owner@example.com", "name": "主人" },
+        "401": { "code": "unauthenticated" }
+      }
+    },
+    {
+      "id": "bank",
+      "method": "GET",
+      "path": "/api/banks/architecture",
+      "auth": "session",
+      "responses": {
+        "200": { "bankId": "architecture", "etag": "quoted-sha256", "questions": [] },
+        "304": { "note": "If-None-Match 命中时无响应体" }
+      }
+    },
+    {
+      "id": "complete",
+      "method": "POST",
+      "path": "/api/study/records/Q1/complete?bankId=architecture",
+      "auth": "session",
+      "request": {},
+      "responses": {
+        "200": { "note": "同一上海日重复完成只增加一次阶段，请求不携带本地 stage" }
+      }
+    },
+    {
+      "id": "notes",
+      "method": "PATCH",
+      "path": "/api/study/records/Q1/notes?bankId=architecture",
+      "auth": "session",
+      "request": { "version": 2, "notes": ["", "", ""] }
+    },
+    {
+      "id": "level",
+      "method": "POST",
+      "path": "/api/study/records/Q1/level?bankId=architecture",
+      "auth": "session",
+      "request": { "version": 2, "level": "vague" }
+    },
+    {
+      "id": "import",
+      "method": "POST",
+      "path": "/api/study/import?bankId=architecture",
+      "auth": "session",
+      "request": { "records": {} }
+    }
+  ]
+}

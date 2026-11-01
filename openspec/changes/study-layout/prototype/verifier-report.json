@@ -1,0 +1,264 @@
+{
+  "schema": "specnav.prototype.verifier.v1",
+  "status": "blocked",
+  "checked_entry": "artifact/index.html",
+  "project_fidelity": {
+    "status": "blocked",
+    "inventory": "visual-inventory.json",
+    "shell_checked": true,
+    "generic_shell_detected": false,
+    "notes": [
+      "匿名打开 /study 只渲染登录表单，页上没有 header、sidebar、content 壳层。",
+      "官方捕获返回 prototype-capture-project-shell-missing，没有写出壳层截图，因此不能做顶栏和侧栏像素对比。",
+      "原型里的顶栏是提议的一行紧凑栏。当前项目顶栏高度声明仍是 425px，两者不是同一张图。"
+    ],
+    "baseline_capture": {
+      "screenshot": {
+        "path": "evidence/project-route.png",
+        "sha256": "ddfac2bb588ab01cee071a4c717a00c0f4d063b8baf8d8bce6559f63a4cf5274"
+      },
+      "dom_snapshot": {
+        "path": "evidence/project-dom.txt",
+        "sha256": "f64b6ce401554decc8fa3f9add692f33c2ec38f081dc74fe81b43df9b3031e72"
+      },
+      "accessibility_snapshot": {
+        "path": "evidence/project-a11y.txt",
+        "sha256": "a24c43ca16a90ab68137c40806cfc4d977ac520ac8557b1390ffcd915358bc95"
+      },
+      "computed_styles": {
+        "path": "evidence/project-computed.json",
+        "sha256": "7e5c58bd8a0b43daaebf987025a7043076a8f75049f588f60300092d7a2b8911"
+      }
+    },
+    "diff": {
+      "status": "blocked",
+      "evidence": []
+    }
+  },
+  "visual_matrix": {
+    "viewports": [
+      "1280x800",
+      "980x800",
+      "390x800"
+    ],
+    "theme_modes": [
+      "light"
+    ],
+    "locales": [
+      "zh-CN"
+    ],
+    "states": [
+      "populated",
+      "permission",
+      "revealed"
+    ]
+  },
+  "checks": [
+    "1280x800 框内同时看见知识目录和当前题目标题",
+    "980 宽顶栏换行，目录仍在题目旁边，框内没有横向滚动",
+    "390 宽目录改成单列并显示底部题目切换",
+    "创建账号和登录表单都落在 1280x800 框内",
+    "七个评审点击都把结果文字改成预期状态"
+  ],
+  "interaction_evidence": {
+    "status": "green",
+    "runner": "playwright",
+    "path": "evidence/browser-verification.md",
+    "sha256": "46f3c9987b6db99122bb16815c3f394a576dc3f57457b6c10ac536bc2a9dc017",
+    "cases": [
+      {
+        "id": "show-setup",
+        "status": "passed",
+        "acceptance_ids": [
+          "acceptance.md#setup-viewport"
+        ],
+        "steps": [
+          "click [data-specnav-action=\"show-setup\"]"
+        ],
+        "evidence": [
+          {
+            "path": "evidence/interaction-show-setup.png",
+            "sha256": "96e02475e1ae7ba3011969f95500d1c3016a7cb0ecf89a775a9c9b3acef5f46b"
+          }
+        ],
+        "observations": [
+          {
+            "anchor": "[data-specnav-result=\"show-setup\"]",
+            "visible": true,
+            "before": "创建账号尚未打开",
+            "after": "创建账号表单进入首屏",
+            "expected_state": "创建账号表单进入首屏",
+            "assertion_passed": true
+          }
+        ]
+      },
+      {
+        "id": "show-login",
+        "status": "passed",
+        "acceptance_ids": [
+          "acceptance.md#login-viewport"
+        ],
+        "steps": [
+          "click [data-specnav-action=\"show-login\"]"
+        ],
+        "evidence": [
+          {
+            "path": "evidence/interaction-show-login.png",
+            "sha256": "7a1ff5cf92d94179ddbcaa9b70f8fa3c75fddc4e70ffa516d4ccaeb2814ddeaf"
+          }
+        ],
+        "observations": [
+          {
+            "anchor": "[data-specnav-result=\"show-login\"]",
+            "visible": true,
+            "before": "登录尚未打开",
+            "after": "登录表单进入首屏",
+            "expected_state": "登录表单进入首屏",
+            "assertion_passed": true
+          }
+        ]
+      },
+      {
+        "id": "show-study",
+        "status": "passed",
+        "acceptance_ids": [
+          "acceptance.md#desktop-first-screen"
+        ],
+        "steps": [
+          "click [data-specnav-action=\"show-study\"]"
+        ],
+        "evidence": [
+          {
+            "path": "evidence/interaction-show-study.png",
+            "sha256": "672e0beb4559869c86aa0028b54806b77c2f2494bffa256799f349accacf214d"
+          }
+        ],
+        "observations": [
+          {
+            "anchor": "[data-specnav-result=\"show-study\"]",
+            "visible": true,
+            "before": "复习首屏尚未打开",
+            "after": "目录和题目标题同时可见",
+            "expected_state": "目录和题目标题同时可见",
+            "assertion_passed": true
+          }
+        ]
+      },
+      {
+        "id": "reveal-answer",
+        "status": "passed",
+        "acceptance_ids": [
+          "acceptance.md#card-order"
+        ],
+        "steps": [
+          "click [data-specnav-action=\"reveal-answer\"]"
+        ],
+        "evidence": [
+          {
+            "path": "evidence/interaction-reveal-answer.png",
+            "sha256": "e46e08e2757bd08e9353f894e74b58294490b8c68f1c74cd0ddfdcb3c121adb5"
+          }
+        ],
+        "observations": [
+          {
+            "anchor": "[data-specnav-result=\"reveal-answer\"]",
+            "visible": true,
+            "before": "解析尚未揭晓",
+            "after": "解析和论文已揭晓",
+            "expected_state": "解析和论文已揭晓",
+            "assertion_passed": true
+          }
+        ]
+      },
+      {
+        "id": "mark-mastered",
+        "status": "passed",
+        "acceptance_ids": [
+          "acceptance.md#mark-level"
+        ],
+        "steps": [
+          "click [data-specnav-action=\"mark-mastered\"]"
+        ],
+        "evidence": [
+          {
+            "path": "evidence/interaction-mark-mastered.png",
+            "sha256": "f6eb33eb8273d7ada0b52689f219d4e9ad32c512184984ac7ab4df94b11ca23e"
+          }
+        ],
+        "observations": [
+          {
+            "anchor": "[data-specnav-result=\"mark-mastered\"]",
+            "visible": true,
+            "before": "掌握程度尚未标记",
+            "after": "本题已标记掌握",
+            "expected_state": "本题已标记掌握",
+            "assertion_passed": true
+          }
+        ]
+      },
+      {
+        "id": "show-wrap",
+        "status": "passed",
+        "acceptance_ids": [
+          "acceptance.md#wrap-topbar"
+        ],
+        "steps": [
+          "click [data-specnav-action=\"show-wrap\"]"
+        ],
+        "evidence": [
+          {
+            "path": "evidence/interaction-show-wrap.png",
+            "sha256": "91a7b887e27b69847939509ddf3406b6d0ee39868b7f4b971a8c52dab88393cc"
+          }
+        ],
+        "observations": [
+          {
+            "anchor": "[data-specnav-result=\"show-wrap\"]",
+            "visible": true,
+            "before": "中等宽度尚未打开",
+            "after": "顶栏已换行且目录仍在题目旁",
+            "expected_state": "顶栏已换行且目录仍在题目旁",
+            "assertion_passed": true
+          }
+        ]
+      },
+      {
+        "id": "show-narrow",
+        "status": "passed",
+        "acceptance_ids": [
+          "acceptance.md#narrow-directory"
+        ],
+        "steps": [
+          "click [data-specnav-action=\"show-narrow\"]"
+        ],
+        "evidence": [
+          {
+            "path": "evidence/interaction-show-narrow.png",
+            "sha256": "b8aaf37224bdab9d22359d34ab8450d19a8e202a1ca2f64384e826755ecda3d9"
+          }
+        ],
+        "observations": [
+          {
+            "anchor": "[data-specnav-result=\"show-narrow\"]",
+            "visible": true,
+            "before": "窄屏尚未打开",
+            "after": "目录已收成单列",
+            "expected_state": "目录已收成单列",
+            "assertion_passed": true
+          }
+        ]
+      }
+    ]
+  },
+  "evidence": [
+    "evidence/prototype-study-1280.png",
+    "evidence/prototype-login-1280.png",
+    "evidence/prototype-setup-1280.png",
+    "evidence/prototype-wrap-980.png",
+    "evidence/prototype-narrow.png",
+    "evidence/project-route.png"
+  ],
+  "blockers": [
+    "prototype-capture-project-shell-missing"
+  ]
+}

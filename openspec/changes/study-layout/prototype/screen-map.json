@@ -1,0 +1,130 @@
+{
+  "screens": [
+    {
+      "id": "setup",
+      "label": "创建首个账号",
+      "requirements": ["requirements.md#SignInPage"],
+      "acceptance": ["acceptance.md#创建账号屏能一次看到品牌、标题、称呼、邮箱、密码和提交"],
+      "components": ["SignInPage"],
+      "visual_evidence": ["visual-inventory.json#project_shell"],
+      "data_flows": ["FLOW-SETUP"],
+      "theme_modes": ["light"],
+      "locales": ["zh-CN"],
+      "implementation_files": ["apps/web/src/styles/auth.css"],
+      "interactions": [
+        {
+          "id": "show-setup",
+          "acceptance_ids": ["acceptance.md#setup-viewport"],
+          "action": "打开创建账号屏",
+          "expected_state": "创建账号表单进入首屏",
+          "anchors": ["[data-specnav-action=\"show-setup\"]"],
+          "result_anchors": ["[data-specnav-result=\"show-setup\"]"]
+        }
+      ]
+    },
+    {
+      "id": "login",
+      "label": "登录复习工作台",
+      "requirements": ["requirements.md#SignInPage"],
+      "acceptance": ["acceptance.md#登录屏能一次看到品牌、标题、邮箱、密码和提交"],
+      "components": ["SignInPage"],
+      "visual_evidence": ["visual-inventory.json#project_shell"],
+      "data_flows": ["FLOW-SIGN-IN"],
+      "theme_modes": ["light"],
+      "locales": ["zh-CN"],
+      "implementation_files": ["apps/web/src/styles/auth.css"],
+      "interactions": [
+        {
+          "id": "show-login",
+          "acceptance_ids": ["acceptance.md#login-viewport"],
+          "action": "打开登录屏",
+          "expected_state": "登录表单进入首屏",
+          "anchors": ["[data-specnav-action=\"show-login\"]"],
+          "result_anchors": ["[data-specnav-result=\"show-login\"]"]
+        }
+      ]
+    },
+    {
+      "id": "study-desktop",
+      "label": "复习首屏 1280×800",
+      "requirements": ["requirements.md#一行顶栏"],
+      "acceptance": ["acceptance.md#目录和当前题目标题同时可见"],
+      "components": ["StudyPage", "QuestionCard"],
+      "visual_evidence": ["visual-inventory.json#project_shell"],
+      "data_flows": ["FLOW-BANK", "FLOW-RECORDS"],
+      "theme_modes": ["light"],
+      "locales": ["zh-CN"],
+      "implementation_files": ["apps/web/src/features/study/study-page.tsx", "apps/web/src/styles/app.css"],
+      "interactions": [
+        {
+          "id": "show-study",
+          "acceptance_ids": ["acceptance.md#desktop-first-screen"],
+          "action": "打开 1280×800 复习首屏",
+          "expected_state": "目录和题目标题同时可见",
+          "anchors": ["[data-specnav-action=\"show-study\"]"],
+          "result_anchors": ["[data-specnav-result=\"show-study\"]"]
+        },
+        {
+          "id": "reveal-answer",
+          "acceptance_ids": ["acceptance.md#card-order"],
+          "action": "揭晓当前题",
+          "expected_state": "解析和论文已揭晓",
+          "anchors": ["[data-specnav-action=\"reveal-answer\"]"],
+          "result_anchors": ["[data-specnav-result=\"reveal-answer\"]"]
+        },
+        {
+          "id": "mark-mastered",
+          "acceptance_ids": ["acceptance.md#mark-level"],
+          "action": "把当前题标为已掌握",
+          "expected_state": "本题已标记掌握",
+          "anchors": ["[data-specnav-action=\"mark-mastered\"]"],
+          "result_anchors": ["[data-specnav-result=\"mark-mastered\"]"]
+        }
+      ]
+    },
+    {
+      "id": "study-wrap",
+      "label": "顶栏换行 980×800",
+      "requirements": ["requirements.md#850-1099"],
+      "acceptance": ["acceptance.md#顶栏可以换行，目录仍在题目旁边"],
+      "components": ["StudyPage"],
+      "visual_evidence": ["visual-inventory.json#project_shell"],
+      "data_flows": ["FLOW-RECORDS"],
+      "theme_modes": ["light"],
+      "locales": ["zh-CN"],
+      "implementation_files": ["apps/web/src/styles/app.css"],
+      "interactions": [
+        {
+          "id": "show-wrap",
+          "acceptance_ids": ["acceptance.md#wrap-topbar"],
+          "action": "打开 980 宽复习屏",
+          "expected_state": "顶栏已换行且目录仍在题目旁",
+          "anchors": ["[data-specnav-action=\"show-wrap\"]"],
+          "result_anchors": ["[data-specnav-result=\"show-wrap\"]"]
+        }
+      ]
+    },
+    {
+      "id": "study-narrow",
+      "label": "窄屏目录单列",
+      "requirements": ["requirements.md#小于850"],
+      "acceptance": ["acceptance.md#目录仍可收成单列"],
+      "components": ["StudyPage"],
+      "visual_evidence": ["visual-inventory.json#project_shell"],
+      "data_flows": ["FLOW-RECORDS"],
+      "theme_modes": ["light"],
+      "locales": ["zh-CN"],
+      "implementation_files": ["apps/web/src/styles/app.css"],
+      "interactions": [
+        {
+          "id": "show-narrow",
+          "acceptance_ids": ["acceptance.md#narrow-directory"],
+          "action": "打开窄屏复习页",
+          "expected_state": "目录已收成单列",
+          "anchors": ["[data-specnav-action=\"show-narrow\"]"],
+          "result_anchors": ["[data-specnav-result=\"show-narrow\"]"]
+        }
+      ]
+    }
+  ]
+}

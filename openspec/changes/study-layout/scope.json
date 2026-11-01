@@ -7,7 +7,9 @@
     "apps/web/src/i18n/locales/zh-CN.json",
     "apps/web/src/main.tsx",
     "apps/web/src/app/app.tsx",
-    "apps/web/src/features/study/study-page.tsx"
+    "apps/web/src/features/study/study-page.tsx",
+    "apps/web/src/styles/app.css",
+    "apps/web/src/styles/auth.css"
   ],
   "denied_roots": [
     ".git",

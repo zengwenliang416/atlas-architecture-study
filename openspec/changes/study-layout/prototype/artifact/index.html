@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>复习工作台排版原型</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="review-bar">
+      <p class="review-kicker">study-layout · 浅色 · zh-CN · 无主题开关 · 无语言开关</p>
+      <div class="review-actions">
+        <button type="button" data-specnav-action="show-setup">创建账号</button>
+        <button type="button" data-specnav-action="show-login">登录</button>
+        <button type="button" data-specnav-action="show-study">复习 1280</button>
+        <button type="button" data-specnav-action="show-wrap">980 换行</button>
+        <button type="button" data-specnav-action="show-narrow">窄屏</button>
+        <button type="button" data-specnav-action="reveal-answer">揭晓</button>
+        <button type="button" data-specnav-action="mark-mastered">标为掌握</button>
+      </div>
+      <div class="review-results">
+        <p data-specnav-result="show-setup">创建账号尚未打开</p>
+        <p data-specnav-result="show-login">登录尚未打开</p>
+        <p data-specnav-result="show-study">复习首屏尚未打开</p>
+        <p data-specnav-result="show-wrap">中等宽度尚未打开</p>
+        <p data-specnav-result="show-narrow">窄屏尚未打开</p>
+        <p data-specnav-result="reveal-answer">解析尚未揭晓</p>
+        <p data-specnav-result="mark-mastered">掌握程度尚未标记</p>
+      </div>
+    </header>
+
+    <section class="stage" data-specnav-screen="setup" id="screen-setup" data-specnav-variant="setup" hidden>
+      <div class="viewport viewport-1280">
+        <div class="auth-screen" data-specnav-component="SignInPage" data-specnav-state="populated">
+          <form class="auth-card">
+            <div class="brandline"><span class="brandmark">a.</span><span>ARCH / ATLAS</span></div>
+            <h1>创建首个账号</h1>
+            <p>创建后公开注册会关闭。题目和解析都需要登录。</p>
+            <label for="setup-name">称呼</label>
+            <input id="setup-name" value="主人" />
+            <label for="setup-email">邮箱</label>
+            <input id="setup-email" type="email" value="owner@example.com" />
+            <label for="setup-password">密码</label>
+            <input id="setup-password" type="password" value="example-password" />
+            <button type="button" class="action primary">创建并登录</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section class="stage" data-specnav-screen="login" id="screen-login" data-specnav-variant="login" hidden>
+      <div class="viewport viewport-1280">
+        <div class="auth-screen" data-specnav-component="SignInPage" data-specnav-state="permission">
+          <form class="auth-card">
+            <div class="brandline"><span class="brandmark">a.</span><span>ARCH / ATLAS</span></div>
+            <h1>登录复习工作台</h1>
+            <p>学习记录保存在服务器，今天按上海日历计算。</p>
+            <label for="login-email">邮箱</label>
+            <input id="login-email" type="email" value="owner@example.com" />
+            <label for="login-password">密码</label>
+            <input id="login-password" type="password" value="" />
+            <button type="button" class="action primary">登录</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section class="stage" data-specnav-screen="study-desktop" id="screen-study" data-specnav-project-shell data-specnav-variant="desktop-1280">
+      <div class="viewport viewport-1280" id="study-viewport">
+        <div class="study" data-specnav-component="StudyPage" data-specnav-state="populated">
+          <header class="topbar" data-specnav-shell-part="header" aria-label="复习工作台顶栏">
+            <div class="brandline"><span class="brandmark">a.</span><span>ARCH / ATLAS</span></div>
+            <div class="progress"><span>已掌握</span><i></i><b>36%</b></div>
+            <p class="counts">收录 <b>39</b> · 已掌握 <b>14</b> · 待巩固 <b>9</b> · 新学 <b>16</b></p>
+            <div class="top-actions">
+              <button type="button" class="action primary">开始自测</button>
+              <button type="button" class="text-btn">今日复习 <b>6</b></button>
+              <button type="button" class="text-btn quiet">退出</button>
+            </div>
+          </header>
+          <div class="workspace">
+            <aside class="sidebar" data-specnav-shell-part="sidebar" aria-label="题目目录">
+              <div class="side-head">
+                <h2>知识目录</h2>
+                <button type="button" class="text-btn" id="toggle-sidebar">收起</button>
+              </div>
+              <input class="search" value="" placeholder="搜索题目" />
+              <div class="filters">
+                <button type="button" class="filter on">全部</button>
+                <button type="button" class="filter">不会</button>
+                <button type="button" class="filter">模糊</button>
+                <button type="button" class="filter">掌握</button>
+              </div>
+              <ol class="toc">
+                <li class="on">Q1 处理过程分解的架构风格</li>
+                <li>Q2 微服务实现模式辨析</li>
+                <li>Q3 云架构的主要特点</li>
+                <li>Q4 企业内部多功能应用模式</li>
+                <li>Q5 四种软件架构建模方法</li>
+                <li>Q6 外观设计相似设计数量限制</li>
+                <li>Q7 面向GUI的软件架构风格</li>
+                <li>Q8 在线帮助系统的设计模式</li>
+              </ol>
+              <p class="due-line">到期复习 6 道</p>
+            </aside>
+            <main class="main" id="questionArea" data-specnav-shell-part="content">
+              <div class="mode-row">
+                <button type="button" class="text-btn">全部展开</button>
+                <button type="button" class="text-btn">只看题干</button>
+                <span>逐题学习</span>
+              </div>
+              <article class="card" data-specnav-component="QuestionCard">
+                <p class="eyebrow">Q1 · 软件架构风格 · 单选题</p>
+                <h1 class="q-title">处理过程分解的架构风格</h1>
+                <section data-specnav-state="populated">
+                  <h3>题干与选项</h3>
+                  <p>某系统需要将整个处理过程分解为多个独立的处理步骤，最适合采用的架构风格是（ ）。</p>
+                  <ol class="options">
+                    <li>A · MVC风格</li>
+                    <li class="picked">B · 管道-过滤器风格</li>
+                    <li>C · C/S风格</li>
+                    <li>D · 虚拟机风格</li>
+                  </ol>
+                </section>
+                <section>
+                  <h3>概念图</h3>
+                  <p class="muted">输入数据 → 过滤器① → 过滤器② → 输出结果</p>
+                </section>
+                <section id="revealed" class="revealed" hidden>
+                  <h3>解析和论文</h3>
+                  <p>每个步骤独立加工，上一阶段的输出交给下一阶段。论文案例仍留在这一区，不提前到题干。</p>
+                </section>
+                <section>
+                  <h3>费曼三问</h3>
+                  <p class="muted">三问仍在题目卡内，正式页面继续防抖保存。</p>
+                </section>
+                <section class="mastery">
+                  <h3>掌握程度</h3>
+                  <button type="button" class="word">新学</button>
+                  <button type="button" class="word">模糊</button>
+                  <button type="button" class="word on" id="level-label">已掌握</button>
+                </section>
+              </article>
+              <section class="after">
+                <h2>间隔表</h2>
+                <p class="muted">0、1、2、4、7、15、30 天。仍排在题目区之后。</p>
+              </section>
+              <section class="after">
+                <h2>导出</h2>
+                <button type="button" class="text-btn">复制全部费曼笔记（纯文本）</button>
+              </section>
+            </main>
+          </div>
+          <nav class="dock" aria-label="窄屏题目切换">
+            <button type="button">上一题</button>
+            <button type="button">揭晓</button>
+            <button type="button">下一题</button>
+          </nav>
+          <p class="toast" data-specnav-component="Toast" hidden>本题已标记掌握</p>
+        </div>
+      </div>
+    </section>
+    <script src="app.js"></script>
+  </body>
+</html>
