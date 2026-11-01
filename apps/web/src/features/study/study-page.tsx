@@ -132,10 +132,9 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
   const dueCount = questions.filter((question) => isDue(recordOf(question).nextReviewOn, today)).length;
   const masteredPct = questions.length === 0 ? 0 : Math.round((counters.mastered / questions.length) * 100);
   const current = visible.find((question) => question.id === ui.focusId) ?? visible[0];
-  const shown = current ? [current] : [];
   const focusId = current?.id ?? ui.focusId;
   const focusIndex = current ? visible.findIndex((question) => question.id === current.id) : -1;
-  const mobileIndex = Math.max(1, questions.findIndex((question) => question.id === focusId) + 1);
+  const mobileIndex = visible.length === 0 || focusIndex < 0 ? 0 : focusIndex + 1;
 
   useEffect(() => {
     if (!ui.toast) return;
@@ -146,6 +145,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
+      if (ui.mode !== 'focus') return;
       if (event.ctrlKey || event.metaKey || event.altKey || target?.isContentEditable) return;
       if (target && ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(target.tagName)) return;
       if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
@@ -167,7 +167,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [ui.activeBlanks, visible, focusIndex, focusId, questions]);
+  }, [ui.mode, ui.activeBlanks, visible, focusIndex, focusId, questions]);
 
   function toast(message: string) {
     dispatch({ type: 'toast', message });
@@ -277,13 +277,18 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
     return lines.join('\n');
   }
 
-  const future = questions
+  const futureQuestions = questions
     .filter((question) => !isDue(recordOf(question).nextReviewOn, today))
-    .sort((a, b) => recordOf(a).nextReviewOn.localeCompare(recordOf(b).nextReviewOn))
-    .slice(0, 13);
+    .sort((a, b) => recordOf(a).nextReviewOn.localeCompare(recordOf(b).nextReviewOn));
+  const futurePreview = futureQuestions.slice(0, SCHEDULE_PREVIEW);
   const dueQuestions = questions.filter((question) => isDue(recordOf(question).nextReviewOn, today));
-  const modeLabel = ui.mode === 'stems' ? '只看题干' : ui.filter === 'due' || ui.mode === 'due' ? '今日到期' : '逐题学习';
+  const modeLabel = ui.mode === 'stems' ? '只看题干' : ui.mode === 'all' ? '全部题目' : ui.filter === 'due' || ui.mode === 'due' ? '今日到期' : '逐题学习';
   const duePreview = dueQuestions.slice(0, SCHEDULE_PREVIEW);
+  const listMode = ui.mode === 'all' || ui.mode === 'due' || ui.mode === 'stems';
+  const shown = listMode ? visible : current ? [current] : [];
+  const modeHint = ui.mode === 'focus'
+    ? `第 ${visible.length === 0 || focusIndex < 0 ? 0 : focusIndex + 1} / ${visible.length} 题，方向键切题，1 到 4 选择，Enter 揭晓`
+    : `列出 ${shown.length} 题`;
 
   return (
     <div className="app" id="top">
@@ -321,16 +326,16 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
             ))}
           </div>
           <TocList questions={visible} focusId={focusId} levelOf={(question) => recordOf(question).level} onJump={(id) => dispatch({ type: 'jump', id, matches: true })} />
-          <div className="side-bottom">到期复习 <strong id="sideDue">{dueCount}</strong> 道<br />今日按 Asia/Shanghai 计算</div>
+          <div className="side-bottom">到期复习 <strong id="sideDue">{dueCount}</strong> 道<br />学习记录在服务器</div>
         </aside>
         <main className="main" id="questionArea" data-specnav-shell-part="content">
           <div className="welcome">
             <div>
               <strong id="modeLabel">{modeLabel}</strong>
-              <p id="modeHint">第 {visible.length === 0 ? 0 : focusIndex + 1} / {visible.length} 题，方向键切题，1 到 4 选择，Enter 揭晓</p>
+              <p id="modeHint">{modeHint}</p>
             </div>
             <div className="mode-actions">
-              <button type="button" className="text-action" id="expandBtn" onClick={() => { dispatch({ type: 'reveal-all', ids: questions.map((question) => question.id) }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>全部展开</button>
+              <button type="button" className="text-action" id="expandBtn" onClick={() => { dispatch({ type: 'expand-all' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>全部题目</button>
               <button type="button" className="text-action" id="stemBtn" onClick={() => { dispatch({ type: 'mask-all' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>只看题干</button>
             </div>
             <div className="mini-nav">
@@ -390,9 +395,10 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
           <div className="duebox">
             <h3>接下来的计划</h3>
             <div id="futureList">
-              {future.length === 0 ? <p className="lock">暂时没有未来复习安排</p> : future.map((question) => (
+              {futureQuestions.length === 0 ? <p className="lock">暂时没有未来复习安排</p> : futurePreview.map((question) => (
                 <div className="dueitem" key={question.id}><a href={`#${question.id}`} onClick={(event) => { event.preventDefault(); dispatch({ type: 'jump', id: question.id, matches: true }); }}>{question.id} {question.title}</a><span className="duedate">{recordOf(question).nextReviewOn}</span></div>
               ))}
+              {futureQuestions.length > SCHEDULE_PREVIEW ? <p>还有 {futureQuestions.length - SCHEDULE_PREVIEW} 道。</p> : null}
             </div>
           </div>
         </div>
@@ -411,7 +417,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
       </section>
       <nav className="mobile-dock" aria-label="移动端题目切换">
         <button id="mobilePrev" type="button" disabled={focusIndex <= 0} onClick={() => { const previous = visible[focusIndex - 1]; if (previous) dispatch({ type: 'jump', id: previous.id, matches: true }); }}>上一题</button>
-        <div className="dock-center" id="dockCounter">Q{mobileIndex} <small>/ {questions.length}</small></div>
+        <div className="dock-center" id="dockCounter">Q{mobileIndex} <small>/ {visible.length}</small></div>
         <button id="mobileNext" type="button" disabled={focusIndex < 0 || focusIndex >= visible.length - 1} onClick={() => { const next = visible[focusIndex + 1]; if (next) dispatch({ type: 'jump', id: next.id, matches: true }); }}>下一题</button>
       </nav>
       <button id="jumpTop" type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} aria-label="返回顶部">顶部</button>

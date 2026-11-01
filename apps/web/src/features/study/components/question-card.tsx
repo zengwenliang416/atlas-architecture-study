@@ -137,7 +137,7 @@ export function QuestionCard({
       </div>
       <div className="zones">
         <section className="paper">
-          <h3><span className="num">①</span>题目识别 / 正确答案</h3>
+          <h3><span className="num">①</span>{reveal ? '题目识别 / 正确答案' : '题目识别'}</h3>
           <span className="pill">{question.topic} · {question.kind}</span>
           <div className="stem">{question.stem}</div>
           {question.blanks.length > 1 ? (
