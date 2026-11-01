@@ -1,83 +1,82 @@
 ---
 version: 1
 name: Atlas 复习工作台
-description: 现行复习工作台的视觉事实，取自 apps/web/src/styles/app.css 后段 editorial 规则。后段覆盖同名选择器。
+description: 现行复习工作台的视觉事实，取自 apps/web/src/styles/app.css。
 colors:
   primary: "#1f46a5"
-  secondary: "#69758d"
-  tertiary: "#3260be"
-  neutral: "#e1e7f0"
+  secondary: "#525252"
+  tertiary: "#737373"
+  neutral: "#e4e4e7"
   background-100: "#ffffff"
-  background-200: "#fbfbf9"
-  gray-100: "#fbfbf9"
-  gray-200: "#e1e7f0"
-  gray-300: "#cbd7f0"
-  gray-400: "#a5b3c5"
-  gray-500: "#8a96aa"
-  gray-600: "#69758d"
-  gray-700: "#63718b"
-  gray-800: "#39445c"
-  gray-900: "#152039"
-  gray-1000: "#152039"
+  background-200: "#fafafa"
+  gray-100: "#fafafa"
+  gray-200: "#f4f4f5"
+  gray-300: "#e4e4e7"
+  gray-400: "#a1a1aa"
+  gray-500: "#737373"
+  gray-600: "#525252"
+  gray-700: "#525252"
+  gray-800: "#171717"
+  gray-900: "#171717"
+  gray-1000: "#171717"
   blue-700: "#1f46a5"
-  red-800: "#d03e38"
-  amber-700: "#f6e4a9"
-  green-700: "#167e62"
+  red-800: "#9f2d2d"
+  green-700: "#157a45"
 typography:
   heading-32:
     fontFamily: Noto Serif CJK SC
-    fontSize: 34px
-    fontWeight: 700
-    lineHeight: 46px
-    letterSpacing: -2.2px
+    fontSize: 32px
+    fontWeight: 500
+    lineHeight: 40px
+    letterSpacing: 0px
   heading-24:
     fontFamily: Noto Serif CJK SC
-    fontSize: 24px
-    fontWeight: 700
-    lineHeight: 34px
-    letterSpacing: -0.8px
+    fontSize: 22px
+    fontWeight: 500
+    lineHeight: 32px
+    letterSpacing: 0px
   label-14:
-    fontFamily: Inter
+    fontFamily: Noto Sans CJK SC
     fontSize: 12px
-    fontWeight: 800
+    fontWeight: 400
     lineHeight: 16px
-    letterSpacing: 1.9px
+    letterSpacing: 0px
   copy-14:
-    fontFamily: Inter
+    fontFamily: Noto Sans CJK SC
     fontSize: 16px
     fontWeight: 400
-    lineHeight: 28px
-    letterSpacing: 0.08px
+    lineHeight: 26px
+    letterSpacing: 0px
   button-14:
-    fontFamily: Inter
+    fontFamily: Noto Sans CJK SC
     fontSize: 14px
-    fontWeight: 700
+    fontWeight: 500
     lineHeight: 20px
-    letterSpacing: 0.1px
+    letterSpacing: 0px
 spacing:
-  xs: 6px
+  xs: 4px
   sm: 8px
   md: 12px
   lg: 16px
-  xl: 20px
-  xxl: 24px
+  xl: 24px
+  xxl: 32px
 rounded:
-  sm: 7px
-  md: 10px
-  lg: 13px
+  sm: 4px
+  md: 8px
+  lg: 12px
 components:
   button-primary:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.background-100}"
     typography: "{typography.button-14}"
     rounded: "{rounded.sm}"
-    height: 50px
+    height: 36px
   button-secondary:
     backgroundColor: "{colors.background-100}"
-    textColor: "{colors.primary}"
+    textColor: "{colors.gray-1000}"
     typography: "{typography.button-14}"
     rounded: "{rounded.sm}"
-    height: 50px
+    height: 36px
   input:
     backgroundColor: "{colors.background-200}"
     textColor: "{colors.gray-1000}"
@@ -90,31 +89,31 @@ components:
 
 ## Overview（概览）
 
-复习工作台是单页学习界面。视觉权威是 `apps/web/src/styles/app.css`。文件前段是旧样式，后段 editorial 规则覆盖同名选择器。正文使用 Inter 与中文无衬线回退，标题使用宋体栈，数字与题号使用 Georgia。页面只有浅色。登录屏使用同一组 CSS 变量，样式在 `apps/web/src/styles/auth.css`。
+复习工作台是单页学习界面。视觉权威是 `apps/web/src/styles/app.css`，静态页使用同一套 `src/styles.css`。正文使用中文无衬线栈，题目标题、刊头和论文使用宋体栈。页面只有浅色。登录屏使用同一组 CSS 变量，样式在 `apps/web/src/styles/auth.css`。
 
 ## Colors（颜色）
 
-`--blue` `#1f46a5` 是主色，用于主按钮、链接和强调。`--ink` `#152039` 是正文。`--muted` `#69758d` 是次要文字。`--edge` 与 `--line` 是分隔和卡片边框。`--paper` 与白色是页面底。`--red` 表示答案、错误和间隔强调。`--green` 表示已掌握和复习完成。`--yellow` `#f6e4a9` 只作淡色点缀，不是警告色。焦点环是 `#edb56e`。选中文字背景是 `#cddcfa`。不要在功能里再写一套与这些变量无关的色板。
+表面用石墨中性色：页底 `#fafafa`，卡片 `#ffffff`，抬起 `#f4f4f5`，正文 `#171717`，次要 `#525252`，弱化 `#737373`。发丝线是正文色 8% 透明。`#1f46a5` 只用于「开始自测」和链接。`#9f2d2d` 只用于正在看的目录项左边线，以及揭晓后的答案左边线。`#157a45` 只用于已掌握。焦点环是 2px 墨色轮廓。
 
 ## Typography（字体）
 
-`body` 的 `font-family` 是 Inter、Noto Sans CJK SC、PingFang SC、Microsoft YaHei、system-ui。题目标题使用 Noto Serif CJK SC、Songti SC、STSong。Georgia 只用于题号、品牌标记和间隔标签。正文字号 16px，行高 1.74。学习页不再使用整屏页标题。题目标题约 22px。眉题和标签用 12px 到 13px。顶栏主按钮字号 13px，字重 600。
+`body` 的 `font-family` 是 Noto Sans CJK SC、PingFang SC、Microsoft YaHei、Noto Sans SC、system-ui。题目标题、刊头和论文使用 Noto Serif CJK SC、Songti SC、STSong。正文字号 16px。刊头标题 32px，字重 500。题目标题 22px，字重 500。界面字重是 400 和 500。小标签不用全大写，也不加宽字距。
 
 ## Layout（布局）
 
-内容最大宽度 1552px，左右内边距 `clamp(20px, 4vw, 76px)`，底部留出 95px。学习页的页眉是页面内部的一条顶栏，不是单独的 header 组件。宽度大于等于 1100px 时，同一行放品牌、掌握进度、收录 / 已掌握 / 待巩固 / 新学、开始自测、今日复习和退出。四个数字是一行文字，不是指标条。只有开始自测是实心主按钮，今日复习和退出是文字按钮。全部展开和只看题干留在题目上方。1280×800 登录后不滚动，目录和当前题目标题同时可见。题目区始终只挂当前一道题。目录在侧栏内部滚动，题量不增加页面高度。今天应复习的列表最多显示 13 条，其余从目录进入。850px 到 1099px 顶栏可以换行，目录仍在题目旁边，不出现横向滚动。小于 850px 时目录变成单列，收起开关仍在。小于 720px 时底部 mobile dock 仍在。题目区去掉外层卡片边框，题目标题约 22px 宋体，题干行宽约 38em。揭晓后的解析底色是 `#fbda83`。当前目录项用浅蓝底。`#1f46a5` 只用于当前目录项、主按钮和链接。绿色只用于已掌握，红色只用于到期。间隔表和导出仍在题目区之后。登录和创建账号不新增顶栏，只收紧外层留白，使表单落在 1280×800 内。创建账号显示称呼；之后的登录是邮箱、密码和提交。打印仍隐藏目录、顶栏动作、模式按钮、控制和笔记输入。
+内容最大宽度 1440px，左右内边距 32px，窄屏 16px。页眉是一条短刊头：品牌、标题「对话题库复习」、一句说明、收录计数、开始自测和今日复习。视觉是刊头下面的真题，没有插画，也没有四张指标卡。1280×800 时目录和当前题目标题同时可见。题目区只挂当前一道题。目录在侧栏内部滚动。今天应复习的列表最多显示 13 条。小于 850px 时目录变成单列。小于 720px 时底部有上一题和下一题。揭晓后的解析留在纸色上，答案左侧是红线。当前目录项左侧是同一条红线。间隔和导出仍在题目区之后。登录和创建账号不另加顶栏。创建账号显示称呼；之后的登录是邮箱、密码和提交。打印仍隐藏目录、顶栏动作、模式按钮、控制和笔记输入。
 
 ## Elevation & Depth（层次与深度）
 
-层次靠边框和留白，阴影很轻。顶栏和登录的主按钮没有投影。Toast 和回到顶部按钮有单独阴影。弹出层只有 toast，没有对话框系统。焦点用 3px 轮廓，不用阴影代替焦点。
+层次靠发丝线和表面台阶。主按钮没有投影。Toast 用很小的中性阴影。焦点用 2px 墨色轮廓。
 
 ## Motion（动效）
 
-按钮、选项和概念节点使用约 0.22s 到 0.24s 的过渡，缓动是 `--ease`。题目卡入场约 0.48s。悬停时按钮和节点上移 2px 到 4px。`prefers-reduced-motion: reduce` 时关闭这些位移和入场。加载、错误和提交中的状态不加装饰动画。
+颜色、边框和按下时的微小缩放用 160ms，缓动是 `cubic-bezier(0.22, 1, 0.36, 1)`。悬停只换表面色。`prefers-reduced-motion: reduce` 时关掉过渡。加载、错误和提交中的状态不加装饰动画。
 
 ## Shapes（形状）
 
-顶栏和题目区不是大圆角卡片。目录不用重边框，当前项是浅底。揭晓前的选中选项用墨色左边线。品牌标记在顶栏里是文字，不是色块。回到顶部仍是胶囊。答案条和口诀用左边框。
+按钮圆角 8px，题目里的选项圆角 4px，卡片圆角 12px。品牌标记是文字 `a.` 加 Atlas。当前目录项是浅底加红色左边线。揭晓前的选中选项用墨色左边线。答案用红色左边线。回到顶部是方角小按钮。
 
 ## Components（组件）
 
@@ -122,7 +121,7 @@ components:
 
 ## Voice & Content（文案与内容）
 
-界面文案是简体中文。品牌短标签可以中英并列，例如 ARCH / ATLAS。按钮写出动作，例如「揭晓答案」「今天复习完」。错误用完整句子，例如「请先登录」。不使用玩笑或命令式责备。题目正文来自题库，界面层不改写题目。
+界面文案是简体中文。品牌是 Atlas 和系统架构设计师。按钮写出动作，例如「揭晓答案」「今天复习完」。错误用完整句子。题目正文来自题库，界面层不改写题目。
 
 ## Theme & Internationalization（主题与国际化）
 
@@ -135,7 +134,7 @@ components:
 
 ## Do's and Don'ts（使用约束）
 
-- 沿用 `--blue`、`--ink`、`--muted`、`--edge`、`--red`、`--green` 和现有字体栈。
+- 沿用 `--accent`、`--ink`、`--muted`、`--pen`、`--good` 和现有字体栈。
 - 焦点必须可见，正文与背景保持现有对比。
 - 颜色状态同时配文字，例如掌握程度按钮有「新的 / 模糊 / 掌握」。
 - 不要引入另一套组件库皮肤，也不要新增暗色主题。

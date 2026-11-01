@@ -10,79 +10,52 @@
 </head>
 <body>
 <div class="app" id="top">
-<header class="top" aria-label="复习工作台首页">
- <div class="hero-chrome">
-  <div class="brandline"><span class="brandmark">a.</span><span>ARCH / ATLAS</span><span class="brand-divider"></span><span class="brand-cn">系统架构设计师 · 个人复习工作台</span></div>
-  <div class="hero-index"><span>VOLUME 01 / Q01—Q39</span><span><i class="online-dot"></i>LOCAL FIRST</span></div>
+<header class="masthead" aria-label="复习工作台">
+ <div class="mast-brand"><span class="brandmark">a.</span><span class="brandname">Atlas</span><span class="brand-cn">系统架构设计师</span></div>
+ <div class="mast-copy">
+  <h1>对话题库复习</h1>
+  <p>先答再揭晓，四区讲解、费曼笔记，按间隔回来</p>
  </div>
- <div class="hero-content">
-  <div class="hero-copy">
-   <div class="hero-eyebrow">STUDY ATLAS · 知识图谱 / 记忆系统</div>
-   <h1>系统架构设计师<br><span class="hero-em">对话题库复习</span></h1>
-   <p class="hero-description">从知道答案，到真正理解。39 道对话真题与知识练习，使用四区辨析、费曼讲解和间隔复习，把每个知识点变成长期记忆。</p>
-   <div class="hero-inline"><span><i></i> <b>39</b> 道完整讲解</span><span><i></i> 无网络依赖</span><span><i></i> 全部学习数据保存在本机</span></div>
+ <div class="mast-side">
+  <div class="mast-actions">
+   <button class="action primary" id="startBtn" type="button">开始自测</button>
+   <button class="text-action" id="dueBtn" type="button">今日复习 <b id="dueNum">39</b></button>
   </div>
-  <div class="hero-art" aria-hidden="true">
-   <svg viewBox="0 0 470 308" xmlns="http://www.w3.org/2000/svg" fill="none">
-    <g stroke="#d6e1f5" stroke-width="1"><path d="M18 52H455M18 102H455M18 152H455M18 202H455M18 252H455"/><path d="M68 20V290M118 20V290M168 20V290M218 20V290M268 20V290M318 20V290M368 20V290M418 20V290"/></g>
-    <g stroke="#b2c7e9" stroke-width="1.2"><circle cx="236" cy="155" r="124" stroke-dasharray="4 7"/><circle cx="236" cy="155" r="91"/><circle cx="236" cy="155" r="55" stroke-dasharray="2 8"/></g>
-    <path d="M94 182L177 116L233 164L321 86L408 141" stroke="#2352b5" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M104 224L180 179L258 212L349 141L416 198" stroke="#de6557" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="5 8"/>
-    <g fill="#fff" stroke="#2253b7" stroke-width="2"><circle cx="94" cy="182" r="9"/><circle cx="177" cy="116" r="9"/><circle cx="233" cy="164" r="9"/><circle cx="321" cy="86" r="9"/><circle cx="408" cy="141" r="9"/></g>
-    <g fill="#fff" stroke="#de6557" stroke-width="2"><circle cx="104" cy="224" r="5"/><circle cx="180" cy="179" r="5"/><circle cx="258" cy="212" r="5"/><circle cx="349" cy="141" r="5"/><circle cx="416" cy="198" r="5"/></g>
-    <rect x="201" y="130" width="69" height="48" rx="5" fill="#224eac"/><text x="235.5" y="160.5" text-anchor="middle" fill="#fff" font-family="Georgia" font-size="25">4+1</text>
-    <g fill="#2253b7" font-size="10" font-family="Georgia" letter-spacing="1"><text x="94" y="164" text-anchor="middle">INPUT</text><text x="177" y="98" text-anchor="middle">MODEL</text><text x="319" y="66" text-anchor="middle">RECALL</text><text x="408" y="123" text-anchor="middle">RETAIN</text></g>
-    <path d="M48 292H431" stroke="#19439e" stroke-width="1.3"/><text x="48" y="284" fill="#7593c2" font-size="11" font-family="Georgia" letter-spacing="3">UNDERSTAND  /  RETAIN  /  EVOLVE</text>
-   </svg>
-  </div>
+  <p class="mast-counts">收录 <b id="totalCount">39</b> · 已掌握 <b class="green" id="knownCount">0</b> · 待巩固 <b id="vagueCount">0</b> · 新学 <b id="newCount">39</b></p>
+  <div class="mast-progress"><span id="heroPct">0% 已掌握</span><span class="hero-progress-track"><span id="heroProgress" class="hero-progress-bar"></span></span></div>
  </div>
- <div class="hero-foot"><span><strong>ATLAS NO.01</strong>　/　把知识点变成自己的语言</span><span class="hero-progress"><span id="heroPct">0% 已掌握</span><span class="hero-progress-track"><span id="heroProgress" class="hero-progress-bar"></span></span></span></div>
 </header>
-<section class="dashboard" aria-label="学习统计">
- <div class="metric"><span>收录题目 / TOTAL</span><strong id="totalCount">39</strong><em class="metric-kicker">01</em></div>
- <div class="metric"><span>已掌握 / MASTERED</span><strong class="green" id="knownCount">0</strong><em class="metric-kicker">02</em></div>
- <div class="metric"><span>待巩固 / UNCERTAIN</span><strong id="vagueCount">0</strong><em class="metric-kicker">03</em></div>
- <div class="metric"><span>新学 / TO LEARN</span><strong class="red" id="newCount">39</strong><em class="metric-kicker">04</em></div>
-</section>
-<div class="controls">
- <button class="action primary" id="startBtn">开始自测 <span class="btn-arrow" aria-hidden="true">↗</span></button>
- <button class="action" id="dueBtn">今日复习 <span class="btn-count" id="dueNum">39</span></button>
- <button class="action" id="expandBtn">全部展开 <span aria-hidden="true">＋</span></button>
- <button class="action" id="stemBtn">只看题干 <span aria-hidden="true">◌</span></button>
-<span class="controls-label">LEARN / TEST / RECALL</span>
-</div>
 <div class="workspace">
  <aside class="sidebar" aria-label="题目目录">
-  <div class="side-header"><div class="side-title">知识目录 <span style="font-size:12px;font-weight:400;color:var(--muted)">/ 39</span></div><button class="mini-btn" id="toggleSidebar" type="button" aria-expanded="false">展开目录 ↓</button></div>
-  <input id="search" class="search" type="search" placeholder="搜索题干、知识点或选项" aria-label="搜索题目">
+  <div class="side-header"><div class="side-title">知识目录 <span>/ 39</span></div><button class="mini-btn" id="toggleSidebar" type="button" aria-expanded="false">展开目录</button></div>
+  <input id="search" class="search" type="search" placeholder="搜索" aria-label="搜索题目">
   <div class="filterrow" id="filters">
-   <button class="filterchip active" data-filter="all">全部</button><button class="filterchip" data-filter="new">不会</button><button class="filterchip" data-filter="vague">模糊</button><button class="filterchip" data-filter="mastered">掌握</button><button class="filterchip" data-filter="due">今日到期</button>
+   <button class="filterchip active" type="button" data-filter="all">全部</button><button class="filterchip" type="button" data-filter="new">不会</button><button class="filterchip" type="button" data-filter="vague">模糊</button><button class="filterchip" type="button" data-filter="mastered">掌握</button><button class="filterchip" type="button" data-filter="due">今日到期</button>
   </div>
   <div class="side-list" id="toc"></div>
   <div class="side-bottom">到期复习 <strong id="sideDue">39</strong> 道<br>学习记录仅存此浏览器</div>
  </aside>
  <main class="main" id="questionArea">
-  <div class="welcome"><div><strong id="modeLabel">逐题学习模式</strong><p id="modeHint">默认隐藏答案和解析，先答题再揭晓。</p></div><div class="mini-nav"><button class="mini-btn" id="prevBtn">← 上一题</button><button class="mini-btn" id="nextBtn">下一题 →</button></div></div>
+  <div class="welcome"><div><strong id="modeLabel">逐题学习</strong><p id="modeHint">答案先遮着，选完再揭晓</p></div><div class="mode-actions"><button class="text-action" id="expandBtn" type="button">全部展开</button><button class="text-action" id="stemBtn" type="button">只看题干</button></div><div class="mini-nav"><button class="mini-btn" id="prevBtn" type="button">上一题</button><button class="mini-btn" id="nextBtn" type="button">下一题</button></div></div>
   <div id="questionCards"></div>
  </main>
 </div>
 <section class="schedule" id="schedule">
- <h2>把遗忘，变成下一次记得</h2>
+ <h2>复习间隔</h2>
  <p>本地日期自动计算。新题默认今天到期；完成一轮后安排下一阶段，后续按最后完成日期推进。状态与费曼笔记会自动保存在 localStorage。</p>
- <div class="interval"><span>当天</span><span>＋1天</span><span>＋2天</span><span>＋4天</span><span>＋7天</span><span>＋15天</span><span>＋30天</span></div>
+ <div class="interval"><span>当天</span><span>1 天</span><span>2 天</span><span>4 天</span><span>7 天</span><span>15 天</span><span>30 天</span></div>
  <div class="schedule-panel"><div class="duebox"><h3>今天应该复习</h3><div id="todayList"></div></div><div class="duebox"><h3>接下来的计划</h3><div id="futureList"></div></div></div>
 </section>
 <section class="export">
- <h2>自己的语言，才是最好的笔记</h2>
+ <h2>费曼笔记</h2>
  <p>将所有题目的三个费曼回答合并成一份纯文本。不会上传服务器，数据只保存在当前浏览器。</p>
- <button class="action primary" id="exportBtn">复制全部费曼笔记（纯文本）</button>
+ <button class="action" id="exportBtn" type="button">复制全部笔记</button>
  <textarea id="fallback" readonly aria-label="复制失败时手动复制的笔记"></textarea>
 </section>
 </div>
-<nav class="mobile-dock" aria-label="移动端题目切换"><button id="mobilePrev" type="button">← 上一题</button><div class="dock-center" id="dockCounter">Q01 <small>/ 39</small></div><button id="mobileNext" type="button">下一题 →</button></nav>
-<button id="jumpTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="返回顶部">↑ 顶部</button>
+<nav class="mobile-dock" aria-label="移动端题目切换"><button id="mobilePrev" type="button">上一题</button><div class="dock-center" id="dockCounter">Q1 <small>/ 39</small></div><button id="mobileNext" type="button">下一题</button></nav>
+<button id="jumpTop" type="button" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="返回顶部">顶部</button>
 <div id="toast" role="status" aria-live="polite"></div>
-
 
 <script type="module" src="./controller.js"></script>
 </body>
