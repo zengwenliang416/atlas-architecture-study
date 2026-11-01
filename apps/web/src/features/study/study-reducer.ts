@@ -7,6 +7,7 @@ export type StudyUiState = {
   filter: LevelFilter;
   keyword: string;
   revealed: string[];
+  revealedBlanks: string[];
   activeBlanks: Record<string, number>;
   selected: Record<string, string>;
   nodeFocus: Record<string, number>;
@@ -22,6 +23,7 @@ export type StudyUiAction =
   | { type: 'keyword'; keyword: string }
   | { type: 'focus'; id: string }
   | { type: 'toggle-reveal'; id: string }
+  | { type: 'toggle-blank-reveal'; id: string; index: number }
   | { type: 'expand-all' }
   | { type: 'mask-all' }
   | { type: 'blank'; id: string; index: number }
@@ -39,6 +41,7 @@ export const initialStudyUi: StudyUiState = {
   filter: 'all',
   keyword: '',
   revealed: [],
+  revealedBlanks: [],
   activeBlanks: { Q9: 2 },
   selected: {},
   nodeFocus: {},
@@ -65,10 +68,17 @@ export function studyUiReducer(state: StudyUiState, action: StudyUiAction): Stud
         : [...state.revealed, action.id];
       return { ...state, revealed };
     }
+    case 'toggle-blank-reveal': {
+      const key = `${action.id}_${action.index}`;
+      const revealedBlanks = state.revealedBlanks.includes(key)
+        ? state.revealedBlanks.filter((item) => item !== key)
+        : [...state.revealedBlanks, key];
+      return { ...state, revealedBlanks };
+    }
     case 'expand-all':
       return { ...state, mode: 'all', filter: 'all', keyword: '' };
     case 'mask-all':
-      return { ...state, revealed: [], mode: 'stems', filter: 'all', keyword: '' };
+      return { ...state, revealed: [], revealedBlanks: [], mode: 'stems', filter: 'all', keyword: '' };
     case 'blank':
       return { ...state, activeBlanks: { ...state.activeBlanks, [action.id]: action.index } };
     case 'pick':
@@ -82,7 +92,7 @@ export function studyUiReducer(state: StudyUiState, action: StudyUiAction): Stud
     case 'sidebar-set':
       return { ...state, sidebarCollapsed: action.collapsed };
     case 'start':
-      return { ...state, revealed: [], filter: 'all', keyword: '', focusId: 'Q1', mode: 'focus' };
+      return { ...state, revealed: [], revealedBlanks: [], filter: 'all', keyword: '', focusId: 'Q1', mode: 'focus' };
     case 'jump':
       return action.matches
         ? { ...state, focusId: action.id, mode: 'focus' }

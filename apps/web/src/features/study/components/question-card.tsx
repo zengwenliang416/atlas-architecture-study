@@ -29,6 +29,7 @@ export function QuestionCard({
   record,
   today,
   reveal,
+  openBlanks,
   blankIndex,
   selectedId,
   nodeIndex,
@@ -36,6 +37,7 @@ export function QuestionCard({
   mode,
   completePending,
   onReveal,
+  onRevealBlank,
   onBlank,
   onPick,
   onNode,
@@ -49,6 +51,7 @@ export function QuestionCard({
   record: StudyRecord;
   today: string;
   reveal: boolean;
+  openBlanks: boolean[];
   blankIndex: number;
   selectedId?: string;
   nodeIndex: number;
@@ -56,6 +59,7 @@ export function QuestionCard({
   mode: string;
   completePending: boolean;
   onReveal: () => void;
+  onRevealBlank: () => void;
   onBlank: (index: number) => void;
   onPick: (choiceId: string) => void;
   onNode: (index: number) => void;
@@ -103,19 +107,22 @@ export function QuestionCard({
   }
 
   if (!blank) return null;
+  const showBlank = reveal || Boolean(openBlanks[blankIndex]);
   const correct = Boolean(selectedId) && selectedId === blank.letter;
   const open = blank.options.length === 0;
   let response = open ? '' : '先选择一个选项，再揭晓';
-  if (selectedId && !reveal) response = `你选择了 ${selectedId}，答案仍遮着`;
-  if (reveal) {
+  if (selectedId && !showBlank) response = `你选择了 ${selectedId}，答案仍遮着`;
+  if (showBlank) {
     response = selectedId
       ? correct
         ? '回答正确'
         : `你选择了 ${selectedId}，本空应选 ${blank.letter || '概念填空'}`
       : '答案已揭晓';
   }
+  const noted = notes.some((note) => note.trim());
   const step = question.steps[Math.min(question.steps.length - 1, nodeIndex)] ?? question.steps[0];
   const doneToday = record.lastReviewedOn === today;
+  const finishBlocked = doneToday || completePending || !noted;
   const summary = question.blanks
     .map((item, index) => `第${index + 1}空：${item.letter ? `${item.letter} · ` : ''}${item.answer}`)
     .join('　｜　');
@@ -153,7 +160,7 @@ export function QuestionCard({
             <div className="option-list">
               {blank.options.map((option) => {
                 const chosen = selectedId === option.id;
-                const className = `choice${chosen ? ' selected' : ''}${reveal && option.correct ? ' correct-revealed' : ''}${reveal && chosen && !option.correct ? ' wrong-selected' : ''}`;
+                const className = `choice${chosen ? ' selected' : ''}${showBlank && option.correct ? ' correct-revealed' : ''}${showBlank && chosen && !option.correct ? ' wrong-selected' : ''}`;
                 return (
                   <button type="button" key={option.id} className={className} aria-pressed={chosen} onClick={() => onPick(option.id)}>
                     <span className="letter">{option.id}</span>
@@ -163,24 +170,41 @@ export function QuestionCard({
               })}
             </div>
           )}
-          {question.blanks.length > 1 ? (
+          {question.blanks.length > 1 && !reveal ? (
+            <button
+              type="button"
+              className="small-btn blank-reveal"
+              aria-expanded={showBlank}
+              disabled={blank.options.length > 0 && !selectedId && !showBlank}
+              onClick={() => {
+                if (blank.options.length > 0 && !selectedId && !showBlank) return;
+                onRevealBlank();
+              }}
+            >
+              {showBlank ? '遮挡此空' : '揭晓此空'}
+            </button>
+          ) : null}
+          {question.blanks.length > 1 && openBlanks.some(Boolean) ? (
             <div className="blank-answer-list">
               <b>各空答案：</b>
-              {question.blanks.map((item, index) => (
-                <div key={item.label}>
-                  <span>{item.label || `第${index + 1}空`}</span>
-                  <strong>{item.letter ? `${item.letter} · ` : ''}{item.answer}</strong>
-                  {item.options.length === 0 ? <em>（原题未提供选项）</em> : null}
-                </div>
-              ))}
+              {question.blanks.map((item, index) => {
+                const rowOpen = Boolean(openBlanks[index]);
+                return (
+                  <div className="blank-row" data-open={rowOpen ? 'true' : 'false'} key={item.label}>
+                    <span>{item.label || `第${index + 1}空`}</span>
+                    {rowOpen ? <strong>{item.letter ? `${item.letter} · ` : ''}{item.answer}</strong> : null}
+                    {rowOpen && item.options.length === 0 ? <em>（原题未提供选项）</em> : null}
+                  </div>
+                );
+              })}
             </div>
           ) : null}
           {response ? <div className="response" role="status">{response}</div> : null}
-          <div className={`answer ${reveal ? '' : 'hidden'}`}>
+          <div className={`answer ${showBlank ? '' : 'hidden'}`}>
             答案：{blank.letter || '原题未给字母'} · {blank.answer}
-            {question.blanks.length > 1 ? <div style={{ fontSize: 13, fontWeight: 500, marginTop: 4 }}>全题：{summary}</div> : null}
+            {reveal && question.blanks.length > 1 ? <div style={{ fontSize: 13, fontWeight: 500, marginTop: 4 }}>全题：{summary}</div> : null}
           </div>
-          {reveal ? null : <div className="lock">答案和解析先遮着</div>}
+          {reveal ? null : <div className="lock">{showBlank ? '讲解仍遮着' : '答案和解析先遮着'}</div>}
         </section>
         <section className="paper">
           <h3><span className="num">②</span>概念</h3>
@@ -299,9 +323,21 @@ export function QuestionCard({
           ))}
         </div>
         <div className="recordline">上次标记：{formatMarked(record.lastMarkedAt)}<br />下一次复习：<b>{record.nextReviewOn}</b>　已复习：{record.reviewCount}次</div>
-        <button type="button" className="reviewbtn" disabled={doneToday || completePending} aria-disabled={doneToday || completePending} onClick={onComplete}>
-          {doneToday ? '今日已复习' : '今天复习完'}
-        </button>
+        <div className="review-mark">
+          <button
+            type="button"
+            className="reviewbtn"
+            disabled={finishBlocked}
+            aria-disabled={finishBlocked}
+            onClick={() => {
+              if (!noted) return;
+              void flush().then(() => onComplete());
+            }}
+          >
+            {doneToday ? '今日已复习' : '今天复习完'}
+          </button>
+          {!doneToday && !noted ? <p className="margin-rule">先留下一句自己的话，再标今天复习完。</p> : null}
+        </div>
       </div>
     </article>
   );

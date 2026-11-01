@@ -618,7 +618,6 @@ button:disabled { cursor: default; transform: none; }
 .only-masked .diagram,
 .only-masked .node-desc,
 .only-masked .concept-takeaway,
-.only-masked .blank-answer-list,
 .only-masked .revealed-only { display: none; }
 .only-masked .concept-wrap:after {
   content: "揭晓后看概念和解析";
@@ -653,6 +652,7 @@ button:disabled { cursor: default; transform: none; }
 .blank-answer-list span { color: var(--muted); min-width: 8em; }
 .blank-answer-list strong { color: var(--ink); font-weight: 500; }
 .blank-answer-list em { color: var(--muted); font-style: normal; font-size: 12px; }
+.blank-reveal { margin-top: 8px; }
 
 .feynman {
   margin-top: 16px;
@@ -714,6 +714,15 @@ button:disabled { cursor: default; transform: none; }
   font-weight: 500;
 }
 .reviewbtn:hover { background: var(--raised); }
+.review-mark { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.margin-rule {
+  margin: 0;
+  padding-left: 8px;
+  border-left: 2px solid var(--pen);
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 16px;
+}
 
 .essay-full {
   margin-top: 24px;
@@ -915,7 +924,7 @@ button:disabled { cursor: default; transform: none; }
   html { scroll-padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
   .app { padding: 0 16px calc(112px + env(safe-area-inset-bottom)); }
   .main { padding-bottom: 48px; }
-  .choice, .reviewbtn { scroll-margin-bottom: calc(88px + env(safe-area-inset-bottom)); }
+  .choice, .reviewbtn, .margin-rule { scroll-margin-bottom: calc(88px + env(safe-area-inset-bottom)); }
   .mast-copy h1, .masthead h1 { font-size: 28px; }
   .q-heading { flex-wrap: wrap; }
   .q-heading h2 { font-size: 20px; }
