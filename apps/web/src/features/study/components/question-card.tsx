@@ -104,14 +104,15 @@ export function QuestionCard({
 
   if (!blank) return null;
   const correct = Boolean(selectedId) && selectedId === blank.letter;
-  let response = '请先选择一个选项，再点击「揭晓答案」。';
-  if (selectedId && !reveal) response = `你选择了 ${selectedId}，答案已遮挡。先想清原因，再揭晓。`;
+  const open = blank.options.length === 0;
+  let response = open ? '' : '先选择一个选项，再揭晓';
+  if (selectedId && !reveal) response = `你选择了 ${selectedId}，答案仍遮着`;
   if (reveal) {
     response = selectedId
       ? correct
-        ? '✓ 回答正确！'
-        : `你选择了 ${selectedId}，本空应选 ${blank.letter || '概念填空'}。`
-      : '答案已揭晓，可以查看下面的逐项分析。';
+        ? '回答正确'
+        : `你选择了 ${selectedId}，本空应选 ${blank.letter || '概念填空'}`
+      : '答案已揭晓';
   }
   const step = question.steps[Math.min(question.steps.length - 1, nodeIndex)] ?? question.steps[0];
   const doneToday = record.lastReviewedOn === today;
@@ -124,14 +125,14 @@ export function QuestionCard({
       <div className="q-heading">
         <div>
           <h2>
-            <span style={{ fontFamily: 'Georgia, serif', color: 'var(--blue)', fontSize: '.75em', letterSpacing: '-.02em', marginRight: 9 }}>{question.id} /</span>
+            <span className="q-id">{question.id}</span>
             {question.title}
           </h2>
           <div className="meta-line">{question.kind}　/　{question.topic}　·　{question.blanks.length}个填空/设问</div>
         </div>
         <div className="q-actions">
-          <button type="button" className="small-btn reveal" aria-expanded={reveal} onClick={onReveal}>{reveal ? '再次遮挡 ↶' : '揭晓答案 ↗'}</button>
-          <button type="button" className="small-btn" onClick={() => document.getElementById(`feynman-${question.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>费曼三问 ↘</button>
+          <button type="button" className="small-btn reveal" aria-expanded={reveal} onClick={onReveal}>{reveal ? '再次遮挡' : '揭晓答案'}</button>
+          <button type="button" className="small-btn" onClick={() => document.getElementById(`feynman-${question.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>费曼三问</button>
         </div>
       </div>
       <div className="zones">
@@ -147,7 +148,7 @@ export function QuestionCard({
             </div>
           ) : null}
           {blank.options.length === 0 ? (
-            <div className="preclose">这一空的原始A/B/C/D选项未出现在对话中。<br />请先尝试在心里写出术语，再揭晓概念答案。</div>
+            <div className="preclose">这一空的原始A/B/C/D选项未出现在对话中。<br />先写出术语，再揭晓</div>
           ) : (
             <div className="option-list">
               {blank.options.map((option) => {
@@ -174,15 +175,15 @@ export function QuestionCard({
               ))}
             </div>
           ) : null}
-          <div className="response" role="status">{response}</div>
+          {response ? <div className="response" role="status">{response}</div> : null}
           <div className={`answer ${reveal ? '' : 'hidden'}`}>
             答案：{blank.letter || '原题未给字母'} · {blank.answer}
             {question.blanks.length > 1 ? <div style={{ fontSize: 13, fontWeight: 500, marginTop: 4 }}>全题：{summary}</div> : null}
           </div>
-          {reveal ? null : <div className="lock">🔒 默认隐藏答案和解析，选完后再揭晓。</div>}
+          {reveal ? null : <div className="lock">答案和解析先遮着</div>}
         </section>
         <section className="paper">
-          <h3><span className="num">②</span>先搞懂 · 可点概念图</h3>
+          <h3><span className="num">②</span>概念</h3>
           <div className="concept-wrap">
             <div className="concept-intro">{question.concept}</div>
             <div className="diagram" aria-label="可点击的知识概念流程图">
@@ -193,9 +194,9 @@ export function QuestionCard({
                 </span>
               ))}
             </div>
-            {step ? <div className="node-desc"><b style={{ color: 'var(--blue)' }}>{step[0]}：</b>{step[1]}</div> : null}
+            {step ? <div className="node-desc"><b>{step[0]}：</b>{step[1]}</div> : null}
             <div className="concept-takeaway">
-              <div className="concept-takeaway-title">TAKEAWAYS / 关键记忆</div>
+              <div className="concept-takeaway-title">关键记忆</div>
               <ul>{question.summary.slice(0, 3).map((item) => <li key={item}>{item}</li>)}</ul>
             </div>
           </div>
@@ -212,7 +213,7 @@ export function QuestionCard({
             ) : blank.options.map((option) => (
               <article key={option.id} className={`opdetail ${option.correct ? 'correct' : ''}`}>
                 <h4>{option.id}. {option.name}</h4>
-                <p><strong className="verdict">{option.correct ? '✓ 正确' : '✕ 不选'}</strong></p>
+                <p><strong className="verdict">{option.correct ? '正确' : '不选'}</strong></p>
                 <p><b>是什么：</b>{option.meaning}</p>
                 <p><b>为什么{option.correct ? '对' : '错'}：</b>{option.reason}</p>
               </article>
@@ -266,8 +267,8 @@ export function QuestionCard({
         </section>
       </div>
       <section className="feynman" id={`feynman-${question.id}`}>
-        <h3>费曼学习法 · 用自己的话讲清楚</h3>
-        <p>点击输入即可保存。讲得越像给零基础同学解释，就说明掌握得越稳。</p>
+        <h3>费曼三问</h3>
+        <p>写下来就会保存。讲得越像给零基础同学解释，掌握得越稳。</p>
         <div className="feynman-grid">
           {NOTE_LABELS.map((label, index) => (
             <div className="fyn" key={label}>
@@ -275,7 +276,7 @@ export function QuestionCard({
               <textarea
                 id={`fyn-${question.id}-${index}`}
                 value={notes[index]}
-                placeholder="写下自己的理解，自动保存……"
+                placeholder="用自己的话写"
                 onFocus={() => { focused.current = true; }}
                 onBlur={() => { focused.current = false; void flush(); }}
                 onChange={(event) => {
@@ -298,7 +299,7 @@ export function QuestionCard({
         </div>
         <div className="recordline">上次标记：{formatMarked(record.lastMarkedAt)}<br />下一次复习：<b>{record.nextReviewOn}</b>　已复习：{record.reviewCount}次</div>
         <button type="button" className="reviewbtn" disabled={doneToday || completePending} aria-disabled={doneToday || completePending} onClick={onComplete}>
-          {doneToday ? '✓ 今日复习已完成' : '✓ 今天复习完 → 下一间隔'}
+          {doneToday ? '今日已复习' : '今天复习完'}
         </button>
       </div>
     </article>

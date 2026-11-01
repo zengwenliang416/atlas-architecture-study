@@ -34,7 +34,7 @@ export function SignInPage() {
   return (
     <div className="auth-screen">
       <form className="auth-card" onSubmit={(event) => { event.preventDefault(); setError(''); submit.mutate(); }}>
-        <div className="brandline"><span className="brandmark">a.</span><span>ARCH / ATLAS</span></div>
+        <div className="brandline"><span className="brandmark">a.</span><span className="brandname">Atlas</span></div>
         <h1>{open ? '创建首个账号' : '登录复习工作台'}</h1>
         <p>{open ? '创建后公开注册会关闭。题目和解析都需要登录。' : '学习记录保存在服务器，今天按上海日历计算。'}</p>
         {status.isError ? <p className="auth-error">API 还没有连上。先启动数据库和 API。</p> : null}

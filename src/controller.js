@@ -18,7 +18,7 @@ const states={'new':'新学 / 不会','vague':'模糊','mastered':'已掌握'};
 
 function answersSummary(q){return q.blanks.map((b,i)=>`第${i+1}空：${b.letter?b.letter+' · ':''}${b.answer}`).join('　｜　')}
 function optionHTML(q,b,reveal){
- if(!b.options.length)return `<div class="preclose">这一空的原始A/B/C/D选项未出现在对话中。<br>请先尝试在心里写出术语，再揭晓概念答案。</div>`;
+ if(!b.options.length)return `<div class="preclose">这一空的原始A/B/C/D选项未出现在对话中。<br>先写出术语，再揭晓</div>`;
  const pick=selected[selectionKey(q)];
  return `<div class="option-list">`+b.options.map(o=>{
  const chosen=pick===o.id;
@@ -30,7 +30,7 @@ function conceptHTML(q,reveal){
  const i=Math.min(q.steps.length-1,nodeFocus[q.id]||0);const step=q.steps[i];
  return `<div class="concept-wrap"><div class="concept-intro">${esc(q.concept)}</div>
  <div class="diagram" aria-label="可点击的知识概念流程图">${q.steps.map((s,j)=>`${j?'<span class="arrow" aria-hidden="true">→</span>':''}<button type="button" class="node ${i===j?'on':''}" data-node="${q.id}" data-step="${j}" aria-pressed="${i===j}">${esc(s[0])}</button>`).join('')}</div>
- <div class="node-desc"><b style="color:var(--blue)">${esc(step[0])}：</b>${esc(step[1])}</div><div class="concept-takeaway"><div class="concept-takeaway-title">TAKEAWAYS / 关键记忆</div><ul>${q.summary.slice(0,3).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div></div>`;
+ <div class="node-desc"><b>${esc(step[0])}：</b>${esc(step[1])}</div><div class="concept-takeaway"><div class="concept-takeaway-title">关键记忆</div><ul>${q.summary.slice(0,3).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div></div>`;
 }
 let activeEssayCase={};
 function essayHTML(q){
@@ -42,12 +42,13 @@ function essayHTML(q){
 }
 function questionCard(q){
  const s=db[q.id],b=getBlank(q),reveal=revealed.has(q.id),pick=selected[selectionKey(q)];
- let response='请先选择一个选项，再点击「揭晓答案」。';
- if(pick&&!reveal)response=`你选择了 ${esc(pick)}，答案已遮挡。先想清原因，再揭晓。`;
- if(reveal)response=pick?(pick===b.letter?'✓ 回答正确！':'你选择了 '+esc(pick)+'，本空应选 '+esc(b.letter||'概念填空')+'。'):'答案已揭晓，可以查看下面的逐项分析。';
+ const open=!b.options.length;
+ let response=open?'':'先选择一个选项，再揭晓';
+ if(pick&&!reveal)response=`你选择了 ${esc(pick)}，答案仍遮着`;
+ if(reveal)response=pick?(pick===b.letter?'回答正确':'你选择了 '+esc(pick)+'，本空应选 '+esc(b.letter||'概念填空')):'答案已揭晓';
  const blanks=q.blanks.length>1?`<div class="blanks">${q.blanks.map((x,i)=>`<button type="button" class="blanktab ${(activeBlanks[q.id]||0)===i?'active':''}" data-blank="${q.id}" data-bi="${i}">${esc(x.label)}</button>`).join('')}</div>`:'';
  const opdetail=b.options.length?b.options.map(o=>`<article class="opdetail ${o.correct?'correct':''}"><h4>${esc(o.id)}. ${esc(o.name)}</h4>
- <p><strong class="verdict">${o.correct?'✓ 正确':'✕ 不选'}</strong></p>
+ <p><strong class="verdict">${o.correct?'正确':'不选'}</strong></p>
  <p><b>是什么：</b>${esc(o.meaning)}</p><p><b>为什么${o.correct?'对':'错'}：</b>${esc(o.reason)}</p></article>`).join(''):
  `<article class="opdetail"><h4>本空为概念填空</h4><p>原始独立选项未展示，不能推定正确选项字母。</p><p><b>标准术语：</b><span class="red">${esc(b.answer)}</span></p></article>`;
  const explanations=`<div class="takeaway-grid"><div>
@@ -59,22 +60,22 @@ function questionCard(q){
  const blankAnswers=q.blanks.length>1?`<div class="blank-answer-list"><b>各空答案：</b>${q.blanks.map((x,i)=>`<div><span>${esc(x.label||`第${i+1}空`)}</span><strong>${esc(x.letter?x.letter+' · ':'')}${esc(x.answer)}</strong>${x.options?.length?'':'<em>（原题未提供选项）</em>'}</div>`).join('')}</div>`:'';
  const questions=blanks+optionHTML(q,b,reveal)+blankAnswers;
  return `<article class="q-shell ${reveal?'':'only-masked'} ${mode==='stems'&&!reveal?'stem-only':''}" id="${q.id}">
- <div class="q-heading"><div><h2><span style="font-family:Georgia,serif;color:var(--blue);font-size:.75em;letter-spacing:-.02em;margin-right:9px">${esc(q.id)} /</span>${esc(q.title)}</h2><div class="meta-line">${esc(q.kind)}　/　${esc(q.topic)}　·　${q.blanks.length}个填空/设问</div></div>
- <div class="q-actions"><button type="button" class="small-btn reveal" data-reveal="${q.id}" aria-expanded="${reveal}">${reveal?'再次遮挡 ↶':'揭晓答案 ↗'}</button><button type="button" class="small-btn" data-toggle-feynman="${q.id}">费曼三问 ↘</button></div></div>
+ <div class="q-heading"><div><h2><span class="q-id">${esc(q.id)}</span>${esc(q.title)}</h2><div class="meta-line">${esc(q.kind)}　/　${esc(q.topic)}　·　${q.blanks.length}个填空/设问</div></div>
+ <div class="q-actions"><button type="button" class="small-btn reveal" data-reveal="${q.id}" aria-expanded="${reveal}">${reveal?'再次遮挡':'揭晓答案'}</button><button type="button" class="small-btn" data-toggle-feynman="${q.id}">费曼三问</button></div></div>
  <div class="zones">
  <section class="paper"><h3><span class="num">①</span>题目识别 / 正确答案</h3><span class="pill">${esc(q.topic)} · ${esc(q.kind)}</span>
  <div class="stem">${esc(q.stem)}</div>${questions}
- <div class="response" role="status">${response}</div><div class="answer ${reveal?'':'hidden'}">答案：${esc(b.letter||'原题未给字母')} · ${esc(b.answer)}${q.blanks.length>1?`<div style="font-size:13px;font-weight:500;margin-top:4px">全题：${esc(answersSummary(q))}</div>`:''}</div>
- ${!reveal?'<div class="lock">🔒 默认隐藏答案和解析，选完后再揭晓。</div>':''}</section>
- <section class="paper"><h3><span class="num">②</span>先搞懂 · 可点概念图</h3>${conceptHTML(q,reveal)}</section>
+ ${response?`<div class="response" role="status">${response}</div>`:''}<div class="answer ${reveal?'':'hidden'}">答案：${esc(b.letter||'原题未给字母')} · ${esc(b.answer)}${q.blanks.length>1?`<div style="font-size:13px;font-weight:500;margin-top:4px">全题：${esc(answersSummary(q))}</div>`:''}</div>
+ ${!reveal?'<div class="lock">答案和解析先遮着</div>':''}</section>
+ <section class="paper"><h3><span class="num">②</span>概念</h3>${conceptHTML(q,reveal)}</section>
  <section class="paper middle revealed-only"><h3><span class="num">③</span>四个选项逐项解析 <span class="pill">是什么 · 对错 · 为什么</span></h3><div class="option-grid">${opdetail}</div></section>
  <section class="paper lower revealed-only"><h3><span class="num">④</span>总结、例子、易错点与口诀</h3>${explanations}</section>
  </div>
- <section class="feynman" id="feynman-${q.id}"><h3>费曼学习法 · 用自己的话讲清楚</h3><p>点击输入即可保存。讲得越像给零基础同学解释，就说明掌握得越稳。</p>
- <div class="feynman-grid">${['① 我怎么讲给零基础同学听？','② 我卡在哪个步骤或选项？','③ 如果只留一句，我记住什么？'].map((label,i)=>`<div class="fyn"><label for="fyn-${q.id}-${i}">${label}</label><textarea id="fyn-${q.id}-${i}" data-note="${q.id}" data-ni="${i}" placeholder="写下自己的理解，自动保存……">${esc(s.notes[i]||'')}</textarea></div>`).join('')}</div></section>
+ <section class="feynman" id="feynman-${q.id}"><h3>费曼三问</h3><p>写下来就会保存。讲得越像给零基础同学解释，掌握得越稳。</p>
+ <div class="feynman-grid">${['① 我怎么讲给零基础同学听？','② 我卡在哪个步骤或选项？','③ 如果只留一句，我记住什么？'].map((label,i)=>`<div class="fyn"><label for="fyn-${q.id}-${i}">${label}</label><textarea id="fyn-${q.id}-${i}" data-note="${q.id}" data-ni="${i}" placeholder="用自己的话写">${esc(s.notes[i]||'')}</textarea></div>`).join('')}</div></section>
  <div class="statusbar"><div class="state-group"><span class="recordline" style="padding-top:9px">掌握程度：</span>${[['new','新学/不会'],['vague','模糊'],['mastered','已掌握']].map(([v,label])=>`<button class="state-btn ${s.level===v?'active '+v:''}" data-status="${q.id}" data-value="${v}" aria-pressed="${s.level===v}">${label}</button>`).join('')}</div>
  <div class="recordline">上次标记：${esc(s.last||'未标记')}<br>下一次复习：<b>${esc(s.next)}</b>　已复习：${s.count}次</div>
- <button type="button" class="reviewbtn" data-complete="${q.id}" ${s.lastReviewedOn===day()?'disabled aria-disabled="true"':''}>${s.lastReviewedOn===day()?'✓ 今日复习已完成':'✓ 今天复习完 → 下一间隔'}</button></div>
+ <button type="button" class="reviewbtn" data-complete="${q.id}" ${s.lastReviewedOn===day()?'disabled aria-disabled="true"':''}>${s.lastReviewedOn===day()?'今日已复习':'今天复习完'}</button></div>
  </article>`;
 }
 function matches(q){
@@ -96,15 +97,16 @@ function renderTOC(){
 function renderQuestions(){
  const list=eligible();const show=(mode==='all'||mode==='due'||mode==='stems')?list:(list.find(q=>q.id===focusId)?[list.find(q=>q.id===focusId)]:list.slice(0,1));
  if(mode==='focus'&&show[0])focusId=show[0].id;
- const a=$('questionCards');a.innerHTML=show.length?show.map(questionCard).join(''):'<div class="empty">当前筛选条件下没有题目。可以切换到“全部”，或等待下一次复习。</div>';
- $('modeLabel').textContent=mode==='all'?'全部展开 · 逐题复习':mode==='due'?'今日到期 · 集中复习':mode==='stems'?'只看题干 · 集中自测':'逐题学习 · 四区复习界面';
- $('modeHint').textContent=`当前显示 ${show.length} / ${DATA.length} 题 · ${mode==='focus'?'点选上/下一题切换':'可直接向下滚动浏览'}${mode==='focus'?' · ←/→ 切题，数字1—4选项，Enter揭晓':''}`;
- const currIndex=list.findIndex(q=>q.id===focusId);$('prevBtn').disabled=mode!=='focus'||currIndex<=0;$('nextBtn').disabled=mode!=='focus'||currIndex>=list.length-1;const mobileCount=DATA.findIndex(q=>q.id===focusId)+1;$('dockCounter').innerHTML='Q'+String(Math.max(1,mobileCount)).padStart(2,'0')+' <small>/ '+DATA.length+'</small>';$('mobilePrev').disabled=mode!=='focus'||currIndex<=0;$('mobileNext').disabled=mode!=='focus'||currIndex>=list.length-1;
+ const a=$('questionCards');a.innerHTML=show.length?show.map(questionCard).join(''):'<div class="empty">这个筛选下没有题目</div>';
+ const currIndex=list.findIndex(q=>q.id===focusId);
+ $('modeLabel').textContent=mode==='all'?'全部展开':mode==='due'?'今日到期':mode==='stems'?'只看题干':'逐题学习';
+ $('modeHint').textContent=mode==='focus'?`第 ${list.length?currIndex+1:0} / ${list.length} 题，方向键切题，1 到 4 选择，Enter 揭晓`:`第 ${show.length} / ${DATA.length} 题`;
+ $('prevBtn').disabled=mode!=='focus'||currIndex<=0;$('nextBtn').disabled=mode!=='focus'||currIndex>=list.length-1;const mobileCount=DATA.findIndex(q=>q.id===focusId)+1;$('dockCounter').innerHTML='Q'+String(Math.max(1,mobileCount))+' <small>/ '+DATA.length+'</small>';$('mobilePrev').disabled=mode!=='focus'||currIndex<=0;$('mobileNext').disabled=mode!=='focus'||currIndex>=list.length-1;
 }
 function renderPlan(){
  const dueItems=DATA.filter(due);const nextItems=DATA.filter(q=>!due(q)).sort((a,b)=>db[a.id].next.localeCompare(db[b.id].next));
- $('todayList').innerHTML=dueItems.length?dueItems.map(q=>`<div class="dueitem"><a href="#${q.id}" data-link="${q.id}">${q.id} ${esc(q.title)}</a><span class="duedate">到期 ${esc(db[q.id].next)}</span></div>`).join(''):'<p class="green">今天暂无到期题目，继续保持！</p>';
- $('futureList').innerHTML=nextItems.length?nextItems.slice(0,13).map(q=>`<div class="dueitem"><a href="#${q.id}" data-link="${q.id}">${q.id} ${esc(q.title)}</a><span class="duedate">${esc(db[q.id].next)}</span></div>`).join(''):'<p style="color:var(--muted)">暂时没有未来复习安排。</p>';
+ $('todayList').innerHTML=dueItems.length?dueItems.map(q=>`<div class="dueitem"><a href="#${q.id}" data-link="${q.id}">${q.id} ${esc(q.title)}</a><span class="duedate">到期 ${esc(db[q.id].next)}</span></div>`).join(''):'<p>今天没有到期的题目</p>';
+ $('futureList').innerHTML=nextItems.length?nextItems.slice(0,13).map(q=>`<div class="dueitem"><a href="#${q.id}" data-link="${q.id}">${q.id} ${esc(q.title)}</a><span class="duedate">${esc(db[q.id].next)}</span></div>`).join(''):'<p class="lock">暂时没有未来复习安排</p>';
 }
 function rerender(){recalc();renderTOC();renderQuestions();renderPlan()}
 function jump(id){
@@ -119,7 +121,7 @@ function complete(id){
 }
 function showAll(){mode='all';filter='all';keyword='';$('search').value='';DATA.forEach(q=>revealed.add(q.id));rerender();$('questionArea').scrollIntoView({behavior:'smooth',block:'start'})}
 function maskAll(){revealed.clear();mode='stems';filter='all';keyword='';$('search').value='';rerender();$('questionArea').scrollIntoView({behavior:'smooth',block:'start'})}
-$('startBtn').onclick=()=>{revealed.clear();filter='all';keyword='';$('search').value='';focusId='Q1';mode='focus';rerender();$('questionArea').scrollIntoView({behavior:'smooth',block:'start'});toast('自测开始，请先选答案')};
+ $('startBtn').onclick=()=>{revealed.clear();filter='all';keyword='';$('search').value='';focusId='Q1';mode='focus';rerender();$('questionArea').scrollIntoView({behavior:'smooth',block:'start'});toast('先选答案，再揭晓')};
 $('dueBtn').onclick=()=>{filter='due';keyword='';$('search').value='';mode='due';rerender();$('questionArea').scrollIntoView({behavior:'smooth',block:'start'})};
 $('expandBtn').onclick=showAll;$('stemBtn').onclick=maskAll;
 $('search').oninput=e=>{keyword=e.target.value;mode='all';rerender()};
@@ -155,7 +157,7 @@ $('exportBtn').onclick=async()=>{
  catch(e){const box=$('fallback');box.style.display='block';box.value=text;box.focus();box.select();try{if(document.execCommand('copy'))toast('费曼笔记已复制');else toast('可在下方文本框手动复制')}catch(_){toast('请在下方文本框手动复制')}}
 };
 if(window.matchMedia('(max-width:850px)').matches){document.querySelector('.sidebar').classList.add('collapsed')}
-$('toggleSidebar').onclick=()=>{const bar=document.querySelector('.sidebar');const hidden=bar.classList.toggle('collapsed');$('toggleSidebar').textContent=hidden?'展开目录 ↓':'收起目录 ↑';$('toggleSidebar').setAttribute('aria-expanded',String(!hidden))};
+$('toggleSidebar').onclick=()=>{const bar=document.querySelector('.sidebar');const hidden=bar.classList.toggle('collapsed');$('toggleSidebar').textContent=hidden?'展开目录':'收起目录';$('toggleSidebar').setAttribute('aria-expanded',String(!hidden))};
 rerender();
 
 // 轻量键盘快捷键；输入框、选项按钮聚焦时不会截获按键。

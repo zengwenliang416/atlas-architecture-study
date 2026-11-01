@@ -34,7 +34,7 @@ const LEVEL_LABEL: Record<Level, string> = {
   vague: '模糊',
   mastered: '已掌握',
 };
-const TOC_ROW = 32;
+const TOC_ROW = 48;
 const TOC_OVERSCAN = 4;
 const SCHEDULE_PREVIEW = 13;
 
@@ -282,31 +282,37 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
     .sort((a, b) => recordOf(a).nextReviewOn.localeCompare(recordOf(b).nextReviewOn))
     .slice(0, 13);
   const dueQuestions = questions.filter((question) => isDue(recordOf(question).nextReviewOn, today));
-  const modeLabel = ui.mode === 'stems' ? '只看题干 · 集中自测' : ui.filter === 'due' || ui.mode === 'due' ? '今日到期 · 集中复习' : '逐题学习 · 四区复习界面';
+  const modeLabel = ui.mode === 'stems' ? '只看题干' : ui.filter === 'due' || ui.mode === 'due' ? '今日到期' : '逐题学习';
   const duePreview = dueQuestions.slice(0, SCHEDULE_PREVIEW);
 
   return (
     <div className="app" id="top">
-      <header className="top study-bar" aria-label="复习工作台" data-specnav-shell-part="header">
-        <div className="brandline"><span className="brandmark">a.</span><span>ARCH / ATLAS</span></div>
-        <div className="study-progress">
-          <span id="heroPct">{masteredPct}% 已掌握</span>
-          <span className="hero-progress-track"><span id="heroProgress" className="hero-progress-bar" style={{ width: `${masteredPct}%` }}></span></span>
+      <header className="masthead" aria-label="复习工作台" data-specnav-shell-part="header">
+        <div className="mast-brand"><span className="brandmark">a.</span><span className="brandname">Atlas</span><span className="brand-cn">系统架构设计师</span></div>
+        <div className="mast-copy">
+          <h1>对话题库复习</h1>
+          <p>先答再揭晓，四区讲解、费曼笔记，按间隔回来</p>
         </div>
-        <p className="study-counts">收录 <b id="totalCount">{questions.length}</b> · 已掌握 <b className="green" id="knownCount">{counters.mastered}</b> · 待巩固 <b id="vagueCount">{counters.vague}</b> · 新学 <b id="newCount">{counters.new}</b></p>
-        <div className="study-actions">
-          <button type="button" className="action primary" id="startBtn" onClick={() => { dispatch({ type: 'start' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); toast('自测开始，请先选答案'); }}>开始自测</button>
-          <button type="button" className="text-action" id="dueBtn" onClick={() => { dispatch({ type: 'filter', filter: 'due' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>今日复习 <b id="dueNum">{dueCount}</b></button>
-          <button type="button" className="text-action quiet session-chip" title={email} onClick={() => { void signOut().then(onSignedOut); }}>退出</button>
+        <div className="mast-side">
+          <div className="mast-actions">
+            <button type="button" className="action primary" id="startBtn" onClick={() => { dispatch({ type: 'start' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); toast('先选答案，再揭晓'); }}>开始自测</button>
+            <button type="button" className="text-action" id="dueBtn" onClick={() => { dispatch({ type: 'filter', filter: 'due' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>今日复习 <b id="dueNum">{dueCount}</b></button>
+            <button type="button" className="text-action quiet session-chip" title={email} onClick={() => { void signOut().then(onSignedOut); }}>退出</button>
+          </div>
+          <p className="mast-counts">收录 <b id="totalCount">{questions.length}</b> · 已掌握 <b className="green" id="knownCount">{counters.mastered}</b> · 待巩固 <b id="vagueCount">{counters.vague}</b> · 新学 <b id="newCount">{counters.new}</b></p>
+          <div className="mast-progress">
+            <span id="heroPct">{masteredPct}% 已掌握</span>
+            <span className="hero-progress-track"><span id="heroProgress" className="hero-progress-bar" style={{ width: `${masteredPct}%` }}></span></span>
+          </div>
         </div>
       </header>
       <div className="workspace">
         <aside className={`sidebar ${ui.sidebarCollapsed ? 'collapsed' : ''}`} aria-label="题目目录" data-specnav-shell-part="sidebar">
           <div className="side-header">
-            <div className="side-title">知识目录 <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--muted)' }}>/ {visible.length}</span></div>
-            <button className="mini-btn" id="toggleSidebar" type="button" aria-expanded={!ui.sidebarCollapsed} onClick={() => dispatch({ type: 'sidebar' })}>{ui.sidebarCollapsed ? '展开目录 ↓' : '收起目录 ↑'}</button>
+            <div className="side-title">知识目录 <span>/ {visible.length}</span></div>
+            <button className="mini-btn" id="toggleSidebar" type="button" aria-expanded={!ui.sidebarCollapsed} onClick={() => dispatch({ type: 'sidebar' })}>{ui.sidebarCollapsed ? '展开目录' : '收起目录'}</button>
           </div>
-          <input id="search" className="search" type="search" placeholder="搜索题干、知识点或选项" aria-label="搜索题目" value={ui.keyword} onChange={(event) => dispatch({ type: 'keyword', keyword: event.target.value })} />
+          <input id="search" className="search" type="search" placeholder="搜索" aria-label="搜索题目" value={ui.keyword} onChange={(event) => dispatch({ type: 'keyword', keyword: event.target.value })} />
           <div className="filterrow" id="filters">
             {(['all', 'new', 'vague', 'mastered', 'due'] as LevelFilter[]).map((filter) => (
               <button type="button" key={filter} className={`filterchip ${ui.filter === filter ? 'active' : ''}`} onClick={() => dispatch({ type: 'filter', filter })}>
@@ -321,21 +327,21 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
           <div className="welcome">
             <div>
               <strong id="modeLabel">{modeLabel}</strong>
-              <p id="modeHint">第 {visible.length === 0 ? 0 : focusIndex + 1} / {visible.length} 题 · ←/→ 切题，数字1—4选项，Enter揭晓</p>
+              <p id="modeHint">第 {visible.length === 0 ? 0 : focusIndex + 1} / {visible.length} 题，方向键切题，1 到 4 选择，Enter 揭晓</p>
             </div>
             <div className="mode-actions">
               <button type="button" className="text-action" id="expandBtn" onClick={() => { dispatch({ type: 'reveal-all', ids: questions.map((question) => question.id) }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>全部展开</button>
               <button type="button" className="text-action" id="stemBtn" onClick={() => { dispatch({ type: 'mask-all' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>只看题干</button>
             </div>
             <div className="mini-nav">
-              <button type="button" className="mini-btn" id="prevBtn" disabled={focusIndex <= 0} onClick={() => { const previous = visible[focusIndex - 1]; if (previous) dispatch({ type: 'jump', id: previous.id, matches: true }); }}>← 上一题</button>
-              <button type="button" className="mini-btn" id="nextBtn" disabled={focusIndex < 0 || focusIndex >= visible.length - 1} onClick={() => { const next = visible[focusIndex + 1]; if (next) dispatch({ type: 'jump', id: next.id, matches: true }); }}>下一题 →</button>
+              <button type="button" className="mini-btn" id="prevBtn" disabled={focusIndex <= 0} onClick={() => { const previous = visible[focusIndex - 1]; if (previous) dispatch({ type: 'jump', id: previous.id, matches: true }); }}>上一题</button>
+              <button type="button" className="mini-btn" id="nextBtn" disabled={focusIndex < 0 || focusIndex >= visible.length - 1} onClick={() => { const next = visible[focusIndex + 1]; if (next) dispatch({ type: 'jump', id: next.id, matches: true }); }}>下一题</button>
             </div>
           </div>
           <div id="questionCards">
             {recordsQuery.isPending || bankQuery.isPending ? <div className="empty">正在读取学习记录</div> : null}
             {recordsQuery.isError || bankQuery.isError ? <div className="empty">学习记录读取失败。确认 API 已启动后刷新。</div> : null}
-            {recordsQuery.isSuccess && bankQuery.isSuccess && shown.length === 0 ? <div className="empty">当前筛选条件下没有题目。可以切换到“全部”，或等待下一次复习。</div> : null}
+            {recordsQuery.isSuccess && bankQuery.isSuccess && shown.length === 0 ? <div className="empty">这个筛选下没有题目</div> : null}
             {shown.map((question) => {
               const record = recordOf(question);
               const blankIndex = ui.activeBlanks[question.id] ?? 0;
@@ -368,14 +374,14 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
         </main>
       </div>
       <section className="schedule" id="schedule">
-        <h2>把遗忘，变成下一次记得</h2>
+        <h2>复习间隔</h2>
         <p>今天由服务器按 Asia/Shanghai 决定。新题默认今天到期；完成一轮后安排下一阶段。同一天重复完成不会再推进间隔。</p>
-        <div className="interval"><span>当天</span><span>＋1天</span><span>＋2天</span><span>＋4天</span><span>＋7天</span><span>＋15天</span><span>＋30天</span></div>
+        <div className="interval"><span>当天</span><span>1 天</span><span>2 天</span><span>4 天</span><span>7 天</span><span>15 天</span><span>30 天</span></div>
         <div className="schedule-panel">
           <div className="duebox">
             <h3>今天应该复习</h3>
             <div id="todayList">
-              {dueQuestions.length === 0 ? <p className="green">今天暂无到期题目，继续保持！</p> : duePreview.map((question) => (
+              {dueQuestions.length === 0 ? <p>今天没有到期的题目</p> : duePreview.map((question) => (
                 <div className="dueitem" key={question.id}><a href={`#${question.id}`} onClick={(event) => { event.preventDefault(); dispatch({ type: 'jump', id: question.id, matches: matchesQuestion(question, recordOf(question), { filter: ui.filter, keyword: ui.keyword, today }) }); }}>{question.id} {question.title}</a><span className="duedate">到期 {recordOf(question).nextReviewOn}</span></div>
               ))}
               {dueQuestions.length > SCHEDULE_PREVIEW ? <p>还有 {dueQuestions.length - SCHEDULE_PREVIEW} 道。用「今日到期」在目录里逐题看。</p> : null}
@@ -384,7 +390,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
           <div className="duebox">
             <h3>接下来的计划</h3>
             <div id="futureList">
-              {future.length === 0 ? <p style={{ color: 'var(--muted)' }}>暂时没有未来复习安排。</p> : future.map((question) => (
+              {future.length === 0 ? <p className="lock">暂时没有未来复习安排</p> : future.map((question) => (
                 <div className="dueitem" key={question.id}><a href={`#${question.id}`} onClick={(event) => { event.preventDefault(); dispatch({ type: 'jump', id: question.id, matches: true }); }}>{question.id} {question.title}</a><span className="duedate">{recordOf(question).nextReviewOn}</span></div>
               ))}
             </div>
@@ -392,9 +398,9 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
         </div>
       </section>
       <section className="export">
-        <h2>自己的语言，才是最好的笔记</h2>
+        <h2>费曼笔记</h2>
         <p>费曼笔记保存在服务器。可以从本机旧的 localStorage 导入一次。</p>
-        <button type="button" className="action primary" id="exportBtn" onClick={() => { void copyText(exportNotes()); }}>复制全部费曼笔记（纯文本）</button>
+        <button type="button" className="action" id="exportBtn" onClick={() => { void copyText(exportNotes()); }}>复制全部笔记</button>
         <button type="button" className="action" onClick={() => {
           const raw = localStorage.getItem(LEGACY_STORAGE_KEY);
           if (!raw) { toast('本机没有旧的学习记录'); return; }
@@ -404,11 +410,11 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
         <textarea id="fallback" readOnly aria-label="复制失败时手动复制的笔记"></textarea>
       </section>
       <nav className="mobile-dock" aria-label="移动端题目切换">
-        <button id="mobilePrev" type="button" disabled={focusIndex <= 0} onClick={() => { const previous = visible[focusIndex - 1]; if (previous) dispatch({ type: 'jump', id: previous.id, matches: true }); }}>← 上一题</button>
-        <div className="dock-center" id="dockCounter">Q{String(mobileIndex).padStart(2, '0')} <small>/ {questions.length}</small></div>
-        <button id="mobileNext" type="button" disabled={focusIndex < 0 || focusIndex >= visible.length - 1} onClick={() => { const next = visible[focusIndex + 1]; if (next) dispatch({ type: 'jump', id: next.id, matches: true }); }}>下一题 →</button>
+        <button id="mobilePrev" type="button" disabled={focusIndex <= 0} onClick={() => { const previous = visible[focusIndex - 1]; if (previous) dispatch({ type: 'jump', id: previous.id, matches: true }); }}>上一题</button>
+        <div className="dock-center" id="dockCounter">Q{mobileIndex} <small>/ {questions.length}</small></div>
+        <button id="mobileNext" type="button" disabled={focusIndex < 0 || focusIndex >= visible.length - 1} onClick={() => { const next = visible[focusIndex + 1]; if (next) dispatch({ type: 'jump', id: next.id, matches: true }); }}>下一题</button>
       </nav>
-      <button id="jumpTop" type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} aria-label="返回顶部">↑ 顶部</button>
+      <button id="jumpTop" type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} aria-label="返回顶部">顶部</button>
       <Toast message={ui.toast} />
     </div>
   );
