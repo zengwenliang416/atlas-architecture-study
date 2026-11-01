@@ -2,6 +2,17 @@ import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BANK_ID, DATA } from '@atlas/bank-architecture';
 import {
+  SCHEDULE_PREVIEW,
+  answersSummary,
+  attemptOf,
+  blankStorageKey,
+  compareLine,
+  compareRows,
+  monthLoad,
+  tallyRows,
+  tallyText,
+} from '@atlas/desk';
+import {
   LEGACY_STORAGE_KEY,
   emptyRecord,
   isDue,
@@ -36,7 +47,6 @@ const LEVEL_LABEL: Record<Level, string> = {
 };
 const TOC_ROW = 48;
 const TOC_OVERSCAN = 4;
-const SCHEDULE_PREVIEW = 13;
 
 function TocList({
   questions,
@@ -93,12 +103,6 @@ function TocList({
       )}
     </div>
   );
-}
-
-function answersSummary(question: Question): string {
-  return question.blanks
-    .map((blank, index) => `第${index + 1}空：${blank.letter ? `${blank.letter} · ` : ''}${blank.answer}`)
-    .join('　｜　');
 }
 
 export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: () => void }) {
@@ -164,7 +168,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
         const option = blank?.options[Number(event.key) - 1];
         if (question && option) {
           event.preventDefault();
-          dispatch({ type: 'pick', key: `${question.id}_${ui.activeBlanks[question.id] ?? 0}`, choice: option.id });
+          dispatch({ type: 'pick', key: blankStorageKey(question.id, ui.activeBlanks[question.id] ?? 0), choice: option.id });
         }
       } else if (event.key === 'Enter') {
         event.preventDefault();
@@ -246,6 +250,54 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
     onError: onConflict,
   });
 
+  async function saveEssay(questionId: string, essayDraft: string, version: number) {
+    try {
+      const record = await api<StudyRecord>(`/api/study/records/${questionId}/essay?bankId=${BANK_ID}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ version, essayDraft }),
+      });
+      replaceRecord(record);
+      return record;
+    } catch (error) {
+      onConflict(error);
+      throw error;
+    }
+  }
+
+  async function submitExam() {
+    if (!ui.exam) return;
+    const queued = ui.exam.ids
+      .map((id) => questions.find((question) => question.id === id))
+      .filter((question): question is Question => Boolean(question));
+    const rows = compareRows(queued, ui.selected);
+    const tally = tallyRows(rows);
+    dispatch({ type: 'graded', compare: { lines: rows.map(compareLine), tally } });
+    try {
+      const result = await api<{ records: StudyRecord[] }>(`/api/study/attempts?bankId=${BANK_ID}`, {
+        method: 'POST',
+        body: JSON.stringify({
+          items: queued.map((question) => ({
+            questionId: question.id,
+            version: recordOf(question).version,
+            attempt: attemptOf(question, ui.selected),
+          })),
+        }),
+      });
+      queryClient.setQueryData<RecordsResponse>(queryKeys.records, (current) => {
+        if (!current) return current;
+        const incoming = new Map(result.records.map((record) => [record.questionId, record]));
+        const records = current.records.map((record) => incoming.get(record.questionId) ?? record);
+        for (const record of result.records) {
+          if (!current.records.some((item) => item.questionId === record.questionId)) records.push(record);
+        }
+        return { ...current, records };
+      });
+      toast(`已交卷：${tallyText(tally)}`);
+    } catch (error) {
+      onConflict(error);
+    }
+  }
+
   async function saveNotes(questionId: string, notes: [string, string, string], version: number) {
     try {
       const record = await api<StudyRecord>(`/api/study/records/${questionId}/notes?bankId=${BANK_ID}`, {
@@ -299,13 +351,13 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
     .sort((a, b) => recordOf(a).nextReviewOn.localeCompare(recordOf(b).nextReviewOn));
   const futurePreview = futureQuestions.slice(0, SCHEDULE_PREVIEW);
   const dueQuestions = questions.filter((question) => isDue(recordOf(question).nextReviewOn, today));
-  const modeLabel = ui.mode === 'stems' ? '只看题干' : ui.mode === 'all' ? '全部题目' : ui.filter === 'due' || ui.mode === 'due' ? '今日到期' : '逐题学习';
+  const modeLabel = ui.mode === 'stems' ? '只看题干' : ui.mode === 'all' ? '全部题目' : ui.filter === 'due' || ui.mode === 'due' ? '今日到期' : ui.exam ? '自测' : '逐题学习';
   const duePreview = dueQuestions.slice(0, SCHEDULE_PREVIEW);
   const listMode = ui.mode === 'all' || ui.mode === 'due' || ui.mode === 'stems';
   const shown = listMode ? visible : current ? [current] : [];
-  const modeHint = ui.mode === 'focus'
-    ? `第 ${visible.length === 0 || focusIndex < 0 ? 0 : focusIndex + 1} / ${visible.length} 题，方向键切题，1 到 4 选择，[ ] 换空，Enter 揭晓，揭晓后 c 完成`
-    : `列出 ${shown.length} 题`;
+  const focusHint = `第 ${visible.length === 0 || focusIndex < 0 ? 0 : focusIndex + 1} / ${visible.length} 题，方向键切题，1 到 4 选择，[ ] 换空，Enter 揭晓，揭晓后 c 完成`;
+  const modeHint = ui.mode === 'focus' ? (ui.exam ? `${focusHint}，可遮挡再交卷` : focusHint) : `列出 ${shown.length} 题`;
+  const month = today ? monthLoad(today, questions.map((question) => recordOf(question).nextReviewOn)) : null;
 
   return (
     <div className="app" id="top">
@@ -317,7 +369,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
         </div>
         <div className="mast-side">
           <div className="mast-actions">
-            <button type="button" className="action primary" id="startBtn" onClick={() => { dispatch({ type: 'start' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); toast('先选答案，再揭晓'); }}>开始自测</button>
+            <button type="button" className="action primary" id="startBtn" onClick={() => { dispatch({ type: 'start', ids: questions.map((question) => question.id) }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); toast('先答，可遮挡，再交卷'); }}>开始自测</button>
             <button type="button" className="text-action" id="dueBtn" onClick={() => { dispatch({ type: 'filter', filter: 'due' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>今日复习 <b id="dueNum">{dueCount}</b></button>
             <button type="button" className="text-action quiet session-chip" title={email} onClick={() => { void signOut().then(onSignedOut); }}>退出</button>
           </div>
@@ -336,9 +388,9 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
           </div>
           <input id="search" className="search" type="search" placeholder="搜索" aria-label="搜索题目" value={ui.keyword} onChange={(event) => dispatch({ type: 'keyword', keyword: event.target.value })} />
           <div className="filterrow" id="filters">
-            {(['all', 'new', 'vague', 'mastered', 'due'] as LevelFilter[]).map((filter) => (
+            {(['all', 'new', 'vague', 'mastered', 'due', 'wrong'] as LevelFilter[]).map((filter) => (
               <button type="button" key={filter} className={`filterchip ${ui.filter === filter ? 'active' : ''}`} onClick={() => dispatch({ type: 'filter', filter })}>
-                {{ all: '全部', new: '不会', vague: '模糊', mastered: '掌握', due: '今日到期' }[filter]}
+                {{ all: '全部', new: '不会', vague: '模糊', mastered: '掌握', due: '今日到期', wrong: '错题' }[filter]}
               </button>
             ))}
           </div>
@@ -354,11 +406,22 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
             <div className="mode-actions">
               <button type="button" className="text-action" id="expandBtn" onClick={() => { dispatch({ type: 'expand-all' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>全部题目</button>
               <button type="button" className="text-action" id="stemBtn" onClick={() => { dispatch({ type: 'mask-all' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>只看题干</button>
+              {ui.exam ? <button type="button" className="text-action" id="maskBtn" onClick={() => { dispatch({ type: 'mask-exam' }); toast('答案已遮住'); }}>遮挡</button> : null}
+              {ui.exam ? <button type="button" className="text-action" id="submitBtn" onClick={() => { void submitExam(); }}>交卷</button> : null}
             </div>
             <div className="mini-nav">
               <button type="button" className="mini-btn" id="prevBtn" disabled={focusIndex <= 0} onClick={() => { const previous = visible[focusIndex - 1]; if (previous) dispatch({ type: 'jump', id: previous.id, matches: true }); }}>上一题</button>
               <button type="button" className="mini-btn" id="nextBtn" disabled={focusIndex < 0 || focusIndex >= visible.length - 1} onClick={() => { const next = visible[focusIndex + 1]; if (next) dispatch({ type: 'jump', id: next.id, matches: true }); }}>下一题</button>
             </div>
+          </div>
+          <div id="compareSummary">
+            {ui.compare ? (
+              <div className="compare-summary">
+                <h3>交卷对照</h3>
+                <p>{tallyText(ui.compare.tally)}</p>
+                <ol>{ui.compare.lines.map((line, index) => <li key={`${index}-${line}`}>{line}</li>)}</ol>
+              </div>
+            ) : null}
           </div>
           <div id="questionCards">
             {recordsQuery.isPending || bankQuery.isPending ? <div className="empty">正在读取学习记录</div> : null}
@@ -374,9 +437,9 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
                   record={record}
                   today={today}
                   reveal={ui.revealed.includes(question.id)}
-                  openBlanks={question.blanks.map((_, index) => ui.revealed.includes(question.id) || ui.revealedBlanks.includes(`${question.id}_${index}`))}
+                  openBlanks={question.blanks.map((_, index) => ui.revealed.includes(question.id) || ui.revealedBlanks.includes(blankStorageKey(question.id, index)))}
                   blankIndex={blankIndex}
-                  selectedId={ui.selected[`${question.id}_${blankIndex}`]}
+                  selectedId={ui.selected[blankStorageKey(question.id, blankIndex)]}
                   nodeIndex={ui.nodeFocus[question.id] ?? 0}
                   essayCase={ui.activeEssayCase[question.id] ?? 'newapi'}
                   mode={ui.mode}
@@ -384,12 +447,13 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
                   onReveal={() => dispatch({ type: 'toggle-reveal', id: question.id })}
                   onRevealBlank={() => dispatch({ type: 'toggle-blank-reveal', id: question.id, index: blankIndex })}
                   onBlank={(index) => dispatch({ type: 'blank', id: question.id, index })}
-                  onPick={(choice) => dispatch({ type: 'pick', key: `${question.id}_${blankIndex}`, choice })}
+                  onPick={(choice) => dispatch({ type: 'pick', key: blankStorageKey(question.id, blankIndex), choice })}
                   onNode={(index) => dispatch({ type: 'node', id: question.id, index })}
                   onEssayCase={(caseKey) => dispatch({ type: 'essay', id: question.id, caseKey })}
                   onLevel={(level) => levelMutation.mutate({ questionId: question.id, level, version: record.version })}
                   onComplete={() => completeMutation.mutate(question.id)}
                   onNotes={(notes, version) => saveNotes(question.id, notes, version)}
+                  onEssayDraft={(essayDraft, version) => saveEssay(question.id, essayDraft, version)}
                   onCopyEssay={(text) => { void copyText(text); }}
                 />
               );
@@ -401,6 +465,20 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
         <h2>复习间隔</h2>
         <p>今天由服务器按 Asia/Shanghai 决定。新题默认今天到期；完成一轮后安排下一阶段。同一天重复完成不会再推进间隔。</p>
         <div className="interval"><span>当天</span><span>1 天</span><span>2 天</span><span>4 天</span><span>7 天</span><span>15 天</span><span>30 天</span></div>
+        {month ? (
+          <div id="monthLoad" className="month-load">
+            <h3>{month.title}</h3>
+            <div className="month-weekdays">{month.weekdays.map((day) => <span key={day}>{day}</span>)}</div>
+            <div className="month-grid">
+              {month.cells.map((cell) => cell.inMonth ? (
+                <div key={cell.date} className={`month-cell${cell.isToday ? ' is-today' : ''}`} data-date={cell.date} data-count={cell.count}>
+                  <span>{Number(cell.date.slice(8))}</span>
+                  {cell.count > 0 ? <b>{cell.count}</b> : null}
+                </div>
+              ) : <div key={cell.date} className="month-pad" />)}
+            </div>
+          </div>
+        ) : null}
         <div className="schedule-panel">
           <div className="duebox">
             <h3>今天应该复习</h3>

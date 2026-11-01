@@ -10,6 +10,9 @@ import {
 } from './errors.js';
 
 export type Notes = [string, string, string];
+export type BlankVerdict = 'right' | 'wrong' | 'skip' | 'open';
+
+const VERDICTS = new Set<BlankVerdict>(['right', 'wrong', 'skip', 'open']);
 
 export type StudyRecord = {
   questionId: string;
@@ -20,6 +23,8 @@ export type StudyRecord = {
   lastReviewedOn: string | null;
   nextReviewOn: string;
   notes: Notes;
+  attempt: BlankVerdict[] | null;
+  essayDraft: string;
   version: number;
 };
 
@@ -33,8 +38,29 @@ export function emptyRecord(questionId: string, today: string): StudyRecord {
     lastReviewedOn: null,
     nextReviewOn: today,
     notes: ['', '', ''],
+    attempt: null,
+    essayDraft: '',
     version: 0,
   };
+}
+
+export function parseAttempt(value: unknown): BlankVerdict[] | null {
+  const parts = Array.isArray(value)
+    ? value
+    : typeof value === 'string' && value.length > 0
+      ? value.split(',')
+      : null;
+  if (!parts || parts.length === 0 || parts.length > 16) return null;
+  const verdicts: BlankVerdict[] = [];
+  for (const part of parts) {
+    if (typeof part !== 'string' || !VERDICTS.has(part as BlankVerdict)) return null;
+    verdicts.push(part as BlankVerdict);
+  }
+  return verdicts;
+}
+
+export function formatAttempt(attempt: readonly BlankVerdict[]): string {
+  return attempt.join(',');
 }
 
 export function intervalDays(stage: number): number {
@@ -105,4 +131,24 @@ export function replaceNotes(
       version: record.version + 1,
     },
   };
+}
+
+export function replaceAttempt(
+  record: StudyRecord,
+  attempt: readonly string[],
+): Result<StudyRecord> {
+  const parsed = parseAttempt(attempt);
+  if (!parsed) {
+    const error: DomainError = { code: 'invalid_attempt', message: '交卷结果无效' };
+    return { ok: false, error };
+  }
+  return { ok: true, value: { ...record, attempt: parsed, version: record.version + 1 } };
+}
+
+export function replaceEssay(record: StudyRecord, essayDraft: string): Result<StudyRecord> {
+  if (typeof essayDraft !== 'string' || essayDraft.length > NOTE_LIMIT) {
+    const error: DomainError = { code: 'invalid_essay', message: '论文草稿超过长度' };
+    return { ok: false, error };
+  }
+  return { ok: true, value: { ...record, essayDraft, version: record.version + 1 } };
 }

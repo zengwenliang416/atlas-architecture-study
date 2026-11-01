@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@atlas/bank-architecture": "workspace:*",
+    "@atlas/desk": "workspace:*",
     "@atlas/domain": "workspace:*",
     "@tanstack/react-query": "5.104.2",
     "react": "19.3.0",

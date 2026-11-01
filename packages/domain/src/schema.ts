@@ -24,6 +24,26 @@ export const importCommandSchema = z.object({
   records: z.record(z.string(), z.unknown()),
 });
 
+export const attemptSchema = z.array(z.enum(['right', 'wrong', 'skip', 'open'])).min(1).max(16);
+
+export const essayCommandSchema = z.object({
+  version: versionSchema,
+  essayDraft: z.string().max(NOTE_LIMIT),
+});
+
+export const attemptsCommandSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        questionId: questionIdSchema,
+        version: versionSchema,
+        attempt: attemptSchema,
+      }),
+    )
+    .min(1)
+    .max(64),
+});
+
 export const setupCommandSchema = z.object({
   email: z.email(),
   password: z.string().min(8).max(128),

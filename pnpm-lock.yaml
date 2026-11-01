@@ -90,6 +90,9 @@ importers:
       '@atlas/bank-architecture':
         specifier: workspace:*
         version: link:../../packages/bank-architecture
+      '@atlas/desk':
+        specifier: workspace:*
+        version: link:../../packages/desk
       '@atlas/domain':
         specifier: workspace:*
         version: link:../../packages/domain
@@ -124,6 +127,8 @@ importers:
       '@atlas/domain':
         specifier: workspace:*
         version: link:../domain
+
+  packages/desk: {}
 
   packages/domain:
     dependencies:

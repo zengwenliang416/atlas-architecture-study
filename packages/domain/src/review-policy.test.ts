@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { plusDays, shanghaiDate } from './calendar.js';
 import { REVIEW_INTERVALS } from './errors.js';
-import { isDue, matchesQuestion } from './filter.js';
+import { hasWrongBlank, isDue, matchesQuestion } from './filter.js';
 import { normalizeLegacy } from './normalize.js';
 import type { Question } from './question.js';
-import { completeReview, emptyRecord, markLevel, replaceNotes } from './review-policy.js';
+import { completeReview, emptyRecord, markLevel, parseAttempt, replaceAttempt, replaceEssay, replaceNotes } from './review-policy.js';
 
 const today = '2026-10-12';
 
@@ -113,4 +113,42 @@ test('keyword and due filters follow the study screen rules', () => {
   assert.equal(matchesQuestion(question, record, { filter: 'mastered', keyword: '', today }), false);
   assert.equal(matchesQuestion(question, record, { filter: 'all', keyword: '管道-过滤器', today }), true);
   assert.equal(matchesQuestion(question, record, { filter: 'all', keyword: '不存在', today }), false);
+  assert.equal(matchesQuestion(question, { ...record, attempt: ['wrong'] }, { filter: 'wrong', keyword: '', today }), true);
+  assert.equal(matchesQuestion(question, { ...record, attempt: ['open'] }, { filter: 'wrong', keyword: '', today }), false);
+  assert.equal(matchesQuestion(question, record, { filter: 'wrong', keyword: '', today }), false);
+  assert.equal(hasWrongBlank(['skip']), true);
+  assert.equal(hasWrongBlank(['right']), false);
+});
+
+test('交卷结果和论文草稿不推进间隔', () => {
+  const start = emptyRecord('Q9', today);
+  const graded = replaceAttempt(start, ['wrong', 'open', 'right']);
+  assert.equal(graded.ok, true);
+  if (!graded.ok) return;
+  assert.deepEqual(graded.value.attempt, ['wrong', 'open', 'right']);
+  assert.equal(graded.value.stage, 0);
+  assert.equal(graded.value.reviewCount, 0);
+  assert.equal(graded.value.nextReviewOn, today);
+  assert.equal(graded.value.version, 1);
+  assert.equal(replaceAttempt(start, ['maybe']).ok, false);
+  const draft = replaceEssay(graded.value, '先写负载均衡');
+  assert.equal(draft.ok, true);
+  if (!draft.ok) return;
+  assert.equal(draft.value.essayDraft, '先写负载均衡');
+  assert.equal(draft.value.stage, 0);
+  assert.equal(draft.value.version, 2);
+  assert.deepEqual(parseAttempt('wrong,open'), ['wrong', 'open']);
+  assert.equal(parseAttempt('wrong,nope'), null);
+});
+
+test('legacy snapshots keep an attempt array and an essay draft', () => {
+  const imported = normalizeLegacy(
+    { level: 'vague', attempt: ['right', 'skip'], essay: '自己的论述', next: '2026-11-02' },
+    'Q22',
+    today,
+  );
+  assert.deepEqual(imported.attempt, ['right', 'skip']);
+  assert.equal(imported.essayDraft, '自己的论述');
+  assert.equal(imported.nextReviewOn, '2026-11-02');
+  assert.equal(imported.stage, 0);
 });

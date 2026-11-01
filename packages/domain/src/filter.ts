@@ -1,7 +1,11 @@
 import type { Level } from './errors.js';
 import type { Question } from './question.js';
 
-export type StudyFilter = 'all' | Level | 'due';
+export type StudyFilter = 'all' | Level | 'due' | 'wrong';
+
+export function hasWrongBlank(attempt: readonly string[] | null | undefined): boolean {
+  return Boolean(attempt?.some((item) => item === 'wrong' || item === 'skip'));
+}
 
 export function isDue(nextReviewOn: string, today: string): boolean {
   return nextReviewOn <= today;
@@ -27,10 +31,11 @@ export function questionSearchText(question: Question): string {
 
 export function matchesQuestion(
   question: Question,
-  record: { level: Level; nextReviewOn: string },
+  record: { level: Level; nextReviewOn: string; attempt?: readonly string[] | null },
   criteria: { filter: StudyFilter; keyword: string; today: string },
 ): boolean {
   if (criteria.filter === 'due' && !isDue(record.nextReviewOn, criteria.today)) return false;
+  if (criteria.filter === 'wrong' && !hasWrongBlank(record.attempt)) return false;
   if (
     (criteria.filter === 'new' || criteria.filter === 'vague' || criteria.filter === 'mastered') &&
     record.level !== criteria.filter

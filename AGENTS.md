@@ -38,6 +38,7 @@ python3 scripts/verify_maintenance.py
 apps/web/                      React 复习界面
 apps/api/                      NestJS API、会话和 PostgreSQL
 packages/domain/               复习规则
+packages/desk/                 题卡纯函数
 packages/bank-architecture/    题面
 src/                           静态站点
 docs/                          当前行为：架构、子系统、操作、事故

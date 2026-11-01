@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { answersSummary, blankStatusText, canRevealBlank, choiceClass } from '@atlas/desk';
 import type { Level, Question, StudyRecord } from '@atlas/domain';
 
 const LEVEL_BUTTONS: [Level, string][] = [
@@ -45,6 +46,7 @@ export function QuestionCard({
   onLevel,
   onComplete,
   onNotes,
+  onEssayDraft,
   onCopyEssay,
 }: {
   question: Question;
@@ -67,18 +69,23 @@ export function QuestionCard({
   onLevel: (level: Level) => void;
   onComplete: () => void;
   onNotes: (notes: [string, string, string], version: number) => Promise<StudyRecord>;
+  onEssayDraft: (essayDraft: string, version: number) => Promise<StudyRecord>;
   onCopyEssay: (text: string) => void;
 }) {
   const blank = question.blanks[blankIndex] ?? question.blanks[0];
   const [notes, setNotes] = useState<[string, string, string]>(record.notes);
+  const [essay, setEssay] = useState(record.essayDraft);
   const version = useRef(record.version);
   const dirty = useRef(false);
   const flight = useRef<Promise<void> | null>(null);
   const focused = useRef(false);
+  const essayFocused = useRef(false);
+  const essayTimer = useRef(0);
 
   useEffect(() => {
     version.current = record.version;
     if (!dirty.current && !focused.current) setNotes(record.notes);
+    if (!essayFocused.current) setEssay(record.essayDraft);
   }, [record]);
 
   useEffect(() => {
@@ -88,6 +95,26 @@ export function QuestionCard({
     }, 400);
     return () => window.clearTimeout(timer);
   }, [notes]);
+
+  useEffect(() => {
+    if (essay === record.essayDraft) return;
+    const timer = window.setTimeout(() => {
+      void persistEssay(essay);
+    }, 400);
+    essayTimer.current = timer;
+    return () => window.clearTimeout(timer);
+  }, [essay, record.essayDraft]);
+
+  async function persistEssay(draft: string) {
+    if (draft === record.essayDraft) return;
+    try {
+      await flush();
+      const next = await onEssayDraft(draft, version.current);
+      version.current = next.version;
+    } catch {
+      /* The page surfaces the save error. */
+    }
+  }
 
   async function flush() {
     if (!dirty.current) return;
@@ -108,24 +135,17 @@ export function QuestionCard({
 
   if (!blank) return null;
   const showBlank = reveal || Boolean(openBlanks[blankIndex]);
-  const correct = Boolean(selectedId) && selectedId === blank.letter;
-  const open = blank.options.length === 0;
-  let response = open ? '' : '先选择一个选项，再揭晓';
-  if (selectedId && !showBlank) response = `你选择了 ${selectedId}，答案仍遮着`;
-  if (showBlank) {
-    response = selectedId
-      ? correct
-        ? '回答正确'
-        : `你选择了 ${selectedId}，本空应选 ${blank.letter || '概念填空'}`
-      : '答案已揭晓';
-  }
+  const response = blankStatusText({
+    optionCount: blank.options.length,
+    selected: selectedId,
+    letter: blank.letter,
+    open: showBlank,
+  });
   const noted = notes.some((note) => note.trim());
   const step = question.steps[Math.min(question.steps.length - 1, nodeIndex)] ?? question.steps[0];
   const doneToday = record.lastReviewedOn === today;
   const finishBlocked = doneToday || completePending || !noted;
-  const summary = question.blanks
-    .map((item, index) => `第${index + 1}空：${item.letter ? `${item.letter} · ` : ''}${item.answer}`)
-    .join('　｜　');
+  const summary = answersSummary(question);
 
   return (
     <article className={`q-shell ${reveal ? '' : 'only-masked'} ${mode === 'stems' && !reveal ? 'stem-only' : ''}`} id={question.id}>
@@ -160,7 +180,7 @@ export function QuestionCard({
             <div className="option-list">
               {blank.options.map((option) => {
                 const chosen = selectedId === option.id;
-                const className = `choice${chosen ? ' selected' : ''}${showBlank && option.correct ? ' correct-revealed' : ''}${showBlank && chosen && !option.correct ? ' wrong-selected' : ''}`;
+                const className = choiceClass({ chosen, open: showBlank, correct: option.correct });
                 return (
                   <button type="button" key={option.id} className={className} aria-pressed={chosen} onClick={() => onPick(option.id)}>
                     <span className="letter">{option.id}</span>
@@ -175,7 +195,7 @@ export function QuestionCard({
               type="button"
               className="small-btn blank-reveal"
               aria-expanded={showBlank}
-              disabled={blank.options.length > 0 && !selectedId && !showBlank}
+              disabled={!canRevealBlank(blank.options.length, selectedId, showBlank)}
               onClick={() => {
                 if (blank.options.length > 0 && !selectedId && !showBlank) return;
                 onRevealBlank();
@@ -244,6 +264,24 @@ export function QuestionCard({
             ))}
           </div>
         </section>
+        {question.essay_cases ? (
+          <section className="paper essay-draft">
+            <h3>先写再对照</h3>
+            <p>草稿写在服务器上的学习记录里，不改范文。</p>
+            <textarea
+              value={essay}
+              placeholder="先写自己的论述"
+              data-essay={question.id}
+              onFocus={() => { essayFocused.current = true; }}
+              onBlur={() => {
+                essayFocused.current = false;
+                window.clearTimeout(essayTimer.current);
+                void persistEssay(essay);
+              }}
+              onChange={(event) => setEssay(event.target.value)}
+            />
+          </section>
+        ) : null}
         <section className="paper lower revealed-only">
           <h3><span className="num">④</span>总结、例子、易错点与口诀</h3>
           <div className="takeaway-grid">

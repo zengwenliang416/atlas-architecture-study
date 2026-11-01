@@ -9,10 +9,14 @@ import {
 import { BANK_ID, DATA } from '@atlas/bank-architecture';
 import {
   emptyRecord,
+  formatAttempt,
   markLevel,
   normalizeLegacy,
+  replaceAttempt,
+  replaceEssay,
   replaceNotes,
   shanghaiDate,
+  type BlankVerdict,
   type StudyRecord,
 } from '@atlas/domain';
 import { and, eq, lte, sql } from 'drizzle-orm';
@@ -98,6 +102,42 @@ export class StudyService {
     });
   }
 
+  async saveEssay(userId: string, bankId: string, questionId: string, version: number, essayDraft: string) {
+    this.assertBank(bankId);
+    this.assertQuestion(questionId);
+    const today = shanghaiDate();
+    const checked = replaceEssay(emptyRecord(questionId, today), essayDraft);
+    if (!checked.ok) throw new BadRequestException({ code: checked.error.code, detail: checked.error.message });
+    return this.writeFields(userId, bankId, questionId, version, today, {
+      essayDraft: checked.value.essayDraft,
+      version: version + 1,
+    });
+  }
+
+  async saveAttempts(
+    userId: string,
+    bankId: string,
+    items: { questionId: string; version: number; attempt: BlankVerdict[] }[],
+  ) {
+    this.assertBank(bankId);
+    const today = shanghaiDate();
+    const records: StudyRecord[] = [];
+    for (const item of items) {
+      this.assertQuestion(item.questionId);
+      const checked = replaceAttempt(emptyRecord(item.questionId, today), item.attempt);
+      if (!checked.ok || !checked.value.attempt) {
+        throw new BadRequestException({ code: 'invalid_attempt', detail: '交卷结果无效' });
+      }
+      records.push(
+        await this.writeFields(userId, bankId, item.questionId, item.version, today, {
+          attempt: formatAttempt(checked.value.attempt),
+          version: item.version + 1,
+        }),
+      );
+    }
+    return { records };
+  }
+
   async saveLevel(userId: string, bankId: string, questionId: string, version: number, level: string) {
     this.assertBank(bankId);
     this.assertQuestion(questionId);
@@ -157,6 +197,8 @@ export class StudyService {
             note0: normalized.notes[0],
             note1: normalized.notes[1],
             note2: normalized.notes[2],
+            attempt: normalized.attempt ? formatAttempt(normalized.attempt) : null,
+            essayDraft: normalized.essayDraft,
             version: 1,
             updatedAt: nowIso,
           })
@@ -171,6 +213,8 @@ export class StudyService {
               note0: normalized.notes[0],
               note1: normalized.notes[1],
               note2: normalized.notes[2],
+              attempt: normalized.attempt ? formatAttempt(normalized.attempt) : null,
+              essayDraft: normalized.essayDraft,
               version: sql`${studyRecord.version} + 1`,
               updatedAt: nowIso,
             },

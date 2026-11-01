@@ -1,6 +1,6 @@
 import { isIsoDate } from './calendar.js';
-import { isLevel, MAX_STAGE } from './errors.js';
-import { emptyRecord, type Notes, type StudyRecord } from './review-policy.js';
+import { isLevel, MAX_STAGE, NOTE_LIMIT } from './errors.js';
+import { emptyRecord, parseAttempt, type Notes, type StudyRecord } from './review-policy.js';
 
 function asNotes(value: unknown): Notes {
   const source = Array.isArray(value) ? value.slice(0, 3) : [];
@@ -29,6 +29,9 @@ export function normalizeLegacy(value: unknown, questionId: string, today: strin
     record.nextReviewOn = raw.nextReviewOn;
   }
   record.notes = asNotes(raw.notes);
+  record.attempt = parseAttempt(raw.attempt);
+  if (typeof raw.essayDraft === 'string') record.essayDraft = raw.essayDraft.slice(0, NOTE_LIMIT);
+  else if (typeof raw.essay === 'string') record.essayDraft = raw.essay.slice(0, NOTE_LIMIT);
   const reviewed = raw.lastReviewedOn;
   if (typeof reviewed === 'string' && isIsoDate(reviewed)) record.lastReviewedOn = reviewed;
   return record;
