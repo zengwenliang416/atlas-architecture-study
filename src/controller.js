@@ -40,7 +40,7 @@ function essayHTML(q){
  const key=activeEssayCase[q.id]||'newapi';
  const name=key==='newapi'?'New API 企业级 AI 网关':'电商交易平台';
  const paras=q.essay_cases[key];
- return `<div class="essay-full" id="essay-${q.id}"><div class="essay-header"><div><h3>完整论文参考范文 · ${esc(name)}</h3><p>两篇均为教学示例；可切换阅读并复制，项目经历与量化数据应由本人真实事实替换。</p></div><div class="essay-tabs"><button type="button" class="small-btn ${key==='newapi'?'essay-selected':''}" data-essaycase="${q.id}" data-case="newapi">New API 网关</button><button type="button" class="small-btn ${key==='ecommerce'?'essay-selected':''}" data-essaycase="${q.id}" data-case="ecommerce">电商平台</button></div></div><div class="essay-copybar"><span>《论负载均衡技术》 · ${esc(name)}</span><button type="button" class="small-btn" data-copyessay="${q.id}">复制这篇完整论文</button></div><div class="essay-body">${paras.map((s,i)=>`<section><h4>${esc(s[0])}</h4><p>${esc(s[1])}</p></section>`).join('')}</div></div>`;
+ return `<div class="essay-full" id="essay-${q.id}"><div class="essay-header"><div><h3>完整论文参考范文 · ${esc(name)}</h3><p>两篇均为教学示例；可切换阅读并复制，项目经历与量化数据应由本人真实事实替换。</p></div><div class="essay-tabs"><button type="button" class="small-btn ${key==='newapi'?'essay-selected':''}" data-essaycase="${q.id}" data-case="newapi">New API 网关</button><button type="button" class="small-btn ${key==='ecommerce'?'essay-selected':''}" data-essaycase="${q.id}" data-case="ecommerce">电商平台</button></div></div><div class="essay-copybar"><span>${esc(q.id)} · ${esc(q.title)}</span><button type="button" class="small-btn" data-copyessay="${q.id}">复制本文</button></div><div class="essay-body">${paras.map((s,i)=>`<section><h4>${esc(s[0])}</h4><p>${esc(s[1])}</p></section>`).join('')}</div></div>`;
 }
 function questionCard(q){
  const s=db[q.id],b=getBlank(q),reveal=revealed.has(q.id),pick=selected[selectionKey(q)];
@@ -148,7 +148,7 @@ document.addEventListener('click',e=>{
  if(b.dataset.status){markLevel(b.dataset.status,b.dataset.value);return}
  if(b.dataset.complete){complete(b.dataset.complete);return}
   if(b.dataset.essaycase){activeEssayCase[b.dataset.essaycase]=b.dataset.case;renderQuestions();return}
-  if(b.dataset.copyessay){const q=DATA.find(x=>x.id===b.dataset.copyessay),key=activeEssayCase[q.id]||'newapi';const t='论负载均衡技术\n\n'+q.essay_cases[key].map(s=>s[0]+'\n'+s[1]).join('\n\n');copyText(t);return}
+  if(b.dataset.copyessay){const q=DATA.find(x=>x.id===b.dataset.copyessay),key=activeEssayCase[q.id]||'newapi';const name=key==='newapi'?'New API 企业级 AI 网关':'电商交易平台';const t=q.id+' '+q.title+'\n'+name+'\n\n'+q.essay_cases[key].map(s=>s[0]+'\n'+s[1]).join('\n\n');copyText(t);return}
  if(b.dataset.toggleFeynman){$('feynman-'+b.dataset.toggleFeynman)?.scrollIntoView({behavior:'smooth',block:'center'});return}
  }
  const a=e.target.closest('[data-link]');if(a){e.preventDefault();jump(a.dataset.link)}

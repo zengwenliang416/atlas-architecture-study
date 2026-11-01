@@ -250,11 +250,12 @@ export function QuestionCard({
                 </div>
               </div>
               <div className="essay-copybar">
-                <span>《论负载均衡技术》 · {essayCase === 'ecommerce' ? '电商交易平台' : 'New API 企业级 AI 网关'}</span>
+                <span>{question.id} · {question.title}</span>
                 <button type="button" className="small-btn" onClick={() => {
                   const sections = question.essay_cases?.[essayCase] ?? [];
-                  onCopyEssay(`论负载均衡技术\n\n${sections.map((section) => `${section[0]}\n${section[1]}`).join('\n\n')}`);
-                }}>复制这篇完整论文</button>
+                  const caseName = essayCase === 'ecommerce' ? '电商交易平台' : 'New API 企业级 AI 网关';
+                  onCopyEssay(`${question.id} ${question.title}\n${caseName}\n\n${sections.map((section) => `${section[0]}\n${section[1]}`).join('\n\n')}`);
+                }}>复制本文</button>
               </div>
               <div className="essay-body">
                 {(question.essay_cases[essayCase] ?? []).map((section) => (

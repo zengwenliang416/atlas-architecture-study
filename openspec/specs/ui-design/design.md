@@ -61,6 +61,7 @@ spacing:
   xl: 24px
   xxl: 32px
 rounded:
+  none: 0px
   sm: 4px
   md: 8px
   lg: 12px
@@ -69,20 +70,26 @@ components:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.background-100}"
     typography: "{typography.button-14}"
-    rounded: "{rounded.sm}"
+    rounded: "{rounded.md}"
     height: 36px
   button-secondary:
     backgroundColor: "{colors.background-100}"
     textColor: "{colors.gray-1000}"
     typography: "{typography.button-14}"
-    rounded: "{rounded.sm}"
+    rounded: "{rounded.md}"
     height: 36px
-  input:
-    backgroundColor: "{colors.background-200}"
+  input-search:
+    backgroundColor: "{colors.background-100}"
+    textColor: "{colors.gray-1000}"
+    typography: "{typography.button-14}"
+    rounded: "{rounded.md}"
+    height: 36px
+  input-auth:
+    backgroundColor: transparent
     textColor: "{colors.gray-1000}"
     typography: "{typography.copy-14}"
-    rounded: "{rounded.sm}"
-    height: 44px
+    rounded: "{rounded.none}"
+    height: 40px
 ---
 
 # Atlas 复习工作台
@@ -113,11 +120,11 @@ components:
 
 ## Shapes（形状）
 
-按钮圆角 8px，题目里的选项圆角 4px，卡片圆角 12px。品牌标记是文字 `a.` 加 Atlas。当前目录项是浅底加红色左边线。揭晓前的选中选项用墨色左边线。答案用红色左边线。回到顶部是方角小按钮。
+按钮圆角 8px、高 36px。目录搜索圆角 8px、高 36px。登录输入高 40px，只有底边线，圆角为 0。题目里的选项圆角 4px，卡片圆角 12px。品牌标记是文字 `a.` 加 Atlas。当前目录项是浅底加红色左边线。揭晓前的选中选项用墨色左边线。答案用红色左边线。回到顶部与其它按钮同为 8px 圆角。
 
 ## Components（组件）
 
-主按钮是 `.action.primary`，次按钮是 `.action`，小按钮是 `.small-btn` 与 `.mini-btn`。输入是 `.search` 和费曼 `textarea`。题目是 `.q-shell`。目录项是 `.toc-item`。筛选是 `.filterchip`。掌握程度是 `.state-btn`。提示是 `#toast`。空状态是 `.empty`。没有表格组件、菜单组件或模态框。按钮必须是 `type="button"`，除非它提交表单。
+主按钮是 `.action.primary`，次按钮是 `.action`，小按钮是 `.small-btn` 与 `.mini-btn`。目录搜索是 `.search`。登录屏输入是 `.auth-card .search`。费曼笔记是 `textarea`。题目是 `.q-shell`。目录项是 `.toc-item`。筛选是 `.filterchip`。掌握程度是 `.state-btn`。提示是 `#toast`。空状态是 `.empty`。没有表格组件、菜单组件或模态框。按钮必须是 `type="button"`，除非它提交表单。
 
 ## Voice & Content（文案与内容）
 
