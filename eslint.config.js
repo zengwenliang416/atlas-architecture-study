@@ -10,6 +10,7 @@ export default tseslint.config(
       'src/**',
       'tests/**',
       'packages/bank-architecture/**',
+      'packages/bank-llm/src/questions.js',
     ],
   },
   js.configs.recommended,

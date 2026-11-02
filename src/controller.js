@@ -1,4 +1,5 @@
-import { DATA } from './data.js';
+import { DATA as ARCH_DATA } from './data.js';
+import { DATA as LLM_DATA } from './llm-data.js';
 import {
   SCHEDULE_PREVIEW,
   answersSummary,
@@ -10,6 +11,7 @@ import {
   compareLine,
   compareRows,
   hasWrongBlank,
+  isMultiAnswer,
   monthLoad,
   tallyRows,
   tallyText,
@@ -18,8 +20,14 @@ import { createStudyRepository, day, plusDays, REVIEW_INTERVALS } from './storag
 
 // Controller/view module: the original interaction model is retained, while
 // data and persistence are injected from dedicated modules.
-const repository = createStudyRepository(DATA);
-const db = repository.records;
+const BANKS = {
+ architecture: { name: '系统架构设计师', storageKey: 'architecture_review_focused_notes_v2', questions: ARCH_DATA, lead: '先答再揭晓，四区讲解、费曼笔记，按间隔回来' },
+ llm: { name: '大模型', storageKey: 'llm_review_focused_notes_v1', questions: LLM_DATA, lead: '先答再揭晓，费曼笔记，按间隔回来' },
+};
+let bankId = 'architecture';
+let DATA = ARCH_DATA;
+let repository = createStudyRepository(DATA);
+let db = repository.records;
 const persist = () => { if (!repository.persist()) toast('当前浏览器无法持久保存学习记录'); };
 
 const $=id=>document.getElementById(id);
@@ -39,7 +47,7 @@ function optionHTML(q,b,reveal){
  if(!b.options.length)return `<div class="preclose">这一空的原始A/B/C/D选项未出现在对话中。<br>先写出术语，再揭晓</div>`;
  const pick=selected[selectionKey(q)];
  return `<div class="option-list">`+b.options.map(o=>{
- const chosen=pick===o.id;
+ const chosen=pick!=null&&pick!==''&&(String(pick).includes('、')?pick.split('、').includes(o.id):pick===o.id);
  const cl=choiceClass({chosen,open:reveal,correct:o.correct});
  return `<button type="button" class="${cl}" data-pick="${q.id}" data-choice="${o.id}" aria-pressed="${chosen}"><span class="letter">${esc(o.id)}</span><span>${esc(o.name)}</span></button>`;
  }).join('')+`</div>`;
@@ -68,9 +76,10 @@ function questionCard(q){
  const blankOpen=cardReveal||revealedBlanks.has(blankKey);
  const response=esc(blankStatusText({optionCount:b.options.length,selected:pick,letter:b.letter,open:blankOpen}));
  const blanks=q.blanks.length>1?`<div class="blanks">${q.blanks.map((x,i)=>`<button type="button" class="blanktab ${(activeBlanks[q.id]||0)===i?'active':''}" data-blank="${q.id}" data-bi="${i}">${esc(x.label)}</button>`).join('')}</div>`:'';
+ const gloss=o=>(o.meaning||o.reason)?`<p><b>是什么：</b>${esc(o.meaning)}</p><p><b>为什么${o.correct?'对':'错'}：</b>${esc(o.reason)}</p>`:'';
  const opdetail=b.options.length?b.options.map(o=>`<article class="opdetail ${o.correct?'correct':''}"><h4>${esc(o.id)}. ${esc(o.name)}</h4>
  <p><strong class="verdict">${o.correct?'正确':'不选'}</strong></p>
- <p><b>是什么：</b>${esc(o.meaning)}</p><p><b>为什么${o.correct?'对':'错'}：</b>${esc(o.reason)}</p></article>`).join(''):
+ ${gloss(o)}</article>`).join(''):
  `<article class="opdetail"><h4>本空为概念填空</h4><p>原始独立选项未展示，不能推定正确选项字母。</p><p><b>标准术语：</b><span class="red">${esc(b.answer)}</span></p></article>`;
  const explanations=`<div class="takeaway-grid"><div>
  <div class="bluelabel">④ 核心知识点</div><ul class="explain-list">${q.core.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
@@ -91,6 +100,10 @@ function questionCard(q){
  const reviewed=s.lastReviewedOn===day();
  const summary=cardReveal&&q.blanks.length>1?`<div style="font-size:13px;font-weight:500;margin-top:4px">全题：${esc(answersSummary(q))}</div>`:'';
  const lock=cardReveal?'':`<div class="lock">${blankOpen?'讲解仍遮着':'答案和解析先遮着'}</div>`;
+ const hasGloss=b.options.some(o=>o.meaning||o.reason);
+ const ledgerHead=hasGloss?'<h3><span class="num">③</span>四个选项逐项解析 <span class="pill">是什么 · 对错 · 为什么</span></h3>':'<h3><span class="num">③</span>选项逐项解析</h3>';
+ const conceptSection=q.concept?`<section class="paper"><h3><span class="num">②</span>概念</h3>${conceptHTML(q,cardReveal)}</section>`:'';
+ const lowerSection=(q.core.length||q.essay_cases)?`<section class="paper lower revealed-only"><h3><span class="num">④</span>总结、例子、易错点与口诀</h3>${explanations}</section>`:'';
  return `<article class="q-shell ${cardReveal?'':'only-masked'} ${mode==='stems'&&!cardReveal?'stem-only':''}" id="${q.id}">
  <div class="q-heading"><div><h2><span class="q-id">${esc(q.id)}</span>${esc(q.title)}</h2><div class="meta-line">${esc(q.kind)}　/　${esc(q.topic)}　·　${q.blanks.length}个填空/设问</div></div>
  <div class="q-actions"><button type="button" class="small-btn reveal" data-reveal="${q.id}" aria-expanded="${cardReveal}">${cardReveal?'再次遮挡':'揭晓答案'}</button><button type="button" class="small-btn" data-toggle-feynman="${q.id}">费曼三问</button></div></div>
@@ -99,10 +112,10 @@ function questionCard(q){
  <div class="stem">${esc(q.stem)}</div>${questions}
  ${response?`<div class="response" role="status">${response}</div>`:''}<div class="answer ${blankOpen?'':'hidden'}">答案：${esc(b.letter||'原题未给字母')} · ${esc(b.answer)}${summary}</div>
  ${lock}</section>
- <section class="paper"><h3><span class="num">②</span>概念</h3>${conceptHTML(q,cardReveal)}</section>
- <section class="paper middle revealed-only"><h3><span class="num">③</span>四个选项逐项解析 <span class="pill">是什么 · 对错 · 为什么</span></h3><div class="option-grid">${opdetail}</div></section>
+ ${conceptSection}
+ <section class="paper middle revealed-only">${ledgerHead}<div class="option-grid">${opdetail}</div></section>
  ${essayDraftHTML(q)}
- <section class="paper lower revealed-only"><h3><span class="num">④</span>总结、例子、易错点与口诀</h3>${explanations}</section>
+ ${lowerSection}
  </div>
  <section class="feynman" id="feynman-${q.id}"><h3>费曼三问</h3><p>写下来就会保存。讲得越像给零基础同学解释，掌握得越稳。</p>
  <div class="feynman-grid">${['① 我怎么讲给零基础同学听？','② 我卡在哪个步骤或选项？','③ 如果只留一句，我记住什么？'].map((label,i)=>`<div class="fyn"><label for="fyn-${q.id}-${i}">${label}</label><textarea id="fyn-${q.id}-${i}" data-note="${q.id}" data-ni="${i}" placeholder="用自己的话写">${esc(s.notes[i]||'')}</textarea></div>`).join('')}</div></section>
@@ -125,8 +138,11 @@ function recalc(){
  const num=DATA.filter(due).length;$('dueNum').textContent=num;$('sideDue').textContent=num;
 }
 function renderTOC(){
- $('toc').innerHTML=DATA.filter(matches).map(q=>`<button type="button" class="toc-item ${q.id===focusId?'active':''}" data-jump="${q.id}"><span class="toc-id">${q.id}</span><span class="toc-name">${esc(q.title)}</span><span class="dot ${db[q.id].level}"></span></button>`).join('')||'<div class="empty">没有匹配的题目</div>';
+ const listed=DATA.filter(matches);
+ const tocCount=$('tocCount');if(tocCount)tocCount.textContent='/ '+listed.length;
+ $('toc').innerHTML=listed.map(q=>`<button type="button" class="toc-item ${q.id===focusId?'active':''}" data-jump="${q.id}"><span class="toc-id">${q.id}</span><span class="toc-name">${esc(q.title)}</span><span class="dot ${db[q.id].level}"></span></button>`).join('')||'<div class="empty">没有匹配的题目</div>';
  document.querySelectorAll('[data-filter]').forEach(b=>b.classList.toggle('active',b.dataset.filter===filter));
+ document.querySelectorAll('[data-bank]').forEach(b=>{b.classList.toggle('active',b.dataset.bank===bankId);b.setAttribute('aria-pressed',String(b.dataset.bank===bankId))});
 }
 function renderQuestions(){
  const list=eligible();const show=(mode==='all'||mode==='due'||mode==='stems')?list:(list.find(q=>q.id===focusId)?[list.find(q=>q.id===focusId)]:list.slice(0,1));
@@ -207,7 +223,7 @@ function complete(id){
 function showAll(){mode='all';filter='all';keyword='';$('search').value='';rerender();$('questionArea').scrollIntoView({behavior:'smooth',block:'start'})}
 function maskAll(){revealed.clear();revealedBlanks.clear();mode='stems';filter='all';keyword='';$('search').value='';rerender();$('questionArea').scrollIntoView({behavior:'smooth',block:'start'})}
 function startExam(){
- revealed.clear();revealedBlanks.clear();selected={};compare=null;filter='all';keyword='';$('search').value='';focusId='Q1';mode='focus';
+ revealed.clear();revealedBlanks.clear();selected={};compare=null;filter='all';keyword='';$('search').value='';focusId=DATA[0].id;mode='focus';
  exam={ids:DATA.map(q=>q.id)};rerender();$('questionArea').scrollIntoView({behavior:'smooth',block:'start'});toast('先答，可遮挡，再交卷');
 }
 function maskExam(){
@@ -238,7 +254,8 @@ document.addEventListener('click',e=>{
  if(b.dataset.reveal){toggleReveal(b.dataset.reveal);return}
  if(b.dataset.revealBlank){toggleBlank(b.dataset.revealBlank);return}
  if(b.dataset.blank){changeBlank(b.dataset.blank,+b.dataset.bi);return}
- if(b.dataset.pick){const q=DATA.find(x=>x.id===b.dataset.pick);selected[selectionKey(q)]=b.dataset.choice;renderQuestions();return}
+ if(b.dataset.bank){useBank(b.dataset.bank);return}
+ if(b.dataset.pick){const q=DATA.find(x=>x.id===b.dataset.pick);applyChoice(q,b.dataset.choice);renderQuestions();return}
  if(b.dataset.node){nodeFocus[b.dataset.node]=+b.dataset.step;renderQuestions();return}
  if(b.dataset.status){markLevel(b.dataset.status,b.dataset.value);return}
  if(b.dataset.complete){complete(b.dataset.complete);return}
@@ -255,7 +272,33 @@ document.addEventListener('input',e=>{
 async function copyText(text){
  try{if(!navigator.clipboard?.writeText)throw Error('no clipboard');await navigator.clipboard.writeText(text);toast('论文正文已复制')}catch(e){const box=$('fallback');box.style.display='block';box.value=text;box.focus();box.select();try{document.execCommand('copy');toast('内容已复制，必要时可手动复制')}catch(_){toast('请从底部文本框手动复制')}}
 }
-function exportNotes(){const lines=['系统架构设计师 · 对话题库费曼笔记','导出日期：'+new Date().toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}),'题目总数：'+DATA.length,'======================='];
+function useBank(nextId){
+ const next=BANKS[nextId];
+ if(!next||nextId===bankId)return;
+ repository.persist();
+ bankId=nextId;
+ DATA=next.questions;
+ repository=createStudyRepository(DATA, globalThis.localStorage, next.storageKey);
+ db=repository.records;
+ revealed.clear();revealedBlanks.clear();selected={};compare=null;exam=null;mode='focus';filter='all';keyword='';
+ const search=$('search');if(search)search.value='';
+ focusId=DATA[0].id;
+ activeBlanks=nextId==='architecture'?{Q9:2}:{};
+ nodeFocus={};
+ const lead=$('mastLead');if(lead)lead.textContent=next.lead;
+ rerender();toast('已切换到'+next.name);
+}
+function applyChoice(q,choice){
+ const blank=getBlank(q);const key=selectionKey(q);
+ if(isMultiAnswer(blank.letter)){
+  const have=new Set(String(selected[key]||'').split('、').filter(Boolean));
+  if(have.has(choice))have.delete(choice);else have.add(choice);
+  selected[key]=blank.options.map(o=>o.id).filter(id=>have.has(id)).join('、');
+  return;
+ }
+ selected[key]=choice;
+}
+function exportNotes(){const lines=[bankId==='architecture'?'系统架构设计师 · 对话题库费曼笔记':BANKS[bankId].name+' · 费曼笔记','导出日期：'+new Date().toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}),'题目总数：'+DATA.length,'======================='];
  for(const q of DATA){const s=db[q.id];lines.push('',q.id+' '+q.title,'题目：'+q.stem,'答案：'+answersSummary(q),'状态：'+states[s.level]+'；复习次数：'+s.count+'；下一次：'+s.next,'费曼一问：'+(s.notes[0]||'（未填写）'),'费曼二问：'+(s.notes[1]||'（未填写）'),'费曼三问：'+(s.notes[2]||'（未填写）'),'-----------------------')}
  return lines.join('\n')}
 $('exportBtn').onclick=async()=>{
@@ -287,7 +330,7 @@ document.addEventListener('keydown',e=>{
   const option=getBlank(q).options[Number(e.key)-1];
   if(!option)return;
   e.preventDefault();
-  selected[selectionKey(q)]=option.id;
+  applyChoice(q,option.id);
   renderQuestions();
  }else if(e.key==='Enter'){
   e.preventDefault();

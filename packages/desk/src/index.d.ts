@@ -44,6 +44,7 @@ export type MonthLoad = {
 export function blankStorageKey(questionId: string, index: number): string;
 export function parseAttempt(value: unknown): BlankVerdict[] | null;
 export function hasWrongBlank(attempt: readonly string[] | null | undefined): boolean;
+export function isMultiAnswer(letter: string): boolean;
 export function canRevealBlank(optionCount: number, selected: string | undefined, open: boolean): boolean;
 export function blankStatusText(input: {
   optionCount: number;

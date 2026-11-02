@@ -135,6 +135,8 @@ export function QuestionCard({
 
   if (!blank) return null;
   const showBlank = reveal || Boolean(openBlanks[blankIndex]);
+  const picked = new Set((selectedId ?? '').split('、').filter(Boolean));
+  const hasGloss = blank.options.some((option) => option.meaning || option.reason);
   const response = blankStatusText({
     optionCount: blank.options.length,
     selected: selectedId,
@@ -179,7 +181,7 @@ export function QuestionCard({
           ) : (
             <div className="option-list">
               {blank.options.map((option) => {
-                const chosen = selectedId === option.id;
+                const chosen = picked.has(option.id);
                 const className = choiceClass({ chosen, open: showBlank, correct: option.correct });
                 return (
                   <button type="button" key={option.id} className={className} aria-pressed={chosen} onClick={() => onPick(option.id)}>
@@ -226,7 +228,7 @@ export function QuestionCard({
           </div>
           {reveal ? null : <div className="lock">{showBlank ? '讲解仍遮着' : '答案和解析先遮着'}</div>}
         </section>
-        <section className="paper">
+        {question.concept ? <section className="paper">
           <h3><span className="num">②</span>概念</h3>
           <div className="concept-wrap">
             <div className="concept-intro">{question.concept}</div>
@@ -244,9 +246,9 @@ export function QuestionCard({
               <ul>{question.summary.slice(0, 3).map((item) => <li key={item}>{item}</li>)}</ul>
             </div>
           </div>
-        </section>
+        </section> : null}
         <section className="paper middle revealed-only">
-          <h3><span className="num">③</span>四个选项逐项解析 <span className="pill">是什么 · 对错 · 为什么</span></h3>
+          <h3><span className="num">③</span>{hasGloss ? '四个选项逐项解析' : '选项逐项解析'}{hasGloss ? <span className="pill">是什么 · 对错 · 为什么</span> : null}</h3>
           <div className="option-grid">
             {blank.options.length === 0 ? (
               <article className="opdetail">
@@ -258,8 +260,8 @@ export function QuestionCard({
               <article key={option.id} className={`opdetail ${option.correct ? 'correct' : ''}`}>
                 <h4>{option.id}. {option.name}</h4>
                 <p><strong className="verdict">{option.correct ? '正确' : '不选'}</strong></p>
-                <p><b>是什么：</b>{option.meaning}</p>
-                <p><b>为什么{option.correct ? '对' : '错'}：</b>{option.reason}</p>
+                {option.meaning ? <p><b>是什么：</b>{option.meaning}</p> : null}
+                {option.reason ? <p><b>为什么{option.correct ? '对' : '错'}：</b>{option.reason}</p> : null}
               </article>
             ))}
           </div>
@@ -282,7 +284,7 @@ export function QuestionCard({
             />
           </section>
         ) : null}
-        <section className="paper lower revealed-only">
+        {question.core.length || question.essay_cases ? <section className="paper lower revealed-only">
           <h3><span className="num">④</span>总结、例子、易错点与口诀</h3>
           <div className="takeaway-grid">
             <div>
@@ -327,7 +329,7 @@ export function QuestionCard({
             </div>
           ) : null}
           <div className="source"><b>⑦ 资料依据：</b>{question.source}</div>
-        </section>
+        </section> : null}
       </div>
       <section className="feynman" id={`feynman-${question.id}`}>
         <h3>费曼三问</h3>

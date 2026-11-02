@@ -32,6 +32,9 @@ importers:
       '@atlas/bank-architecture':
         specifier: workspace:*
         version: link:../../packages/bank-architecture
+      '@atlas/bank-llm':
+        specifier: workspace:*
+        version: link:../../packages/bank-llm
       '@atlas/domain':
         specifier: workspace:*
         version: link:../../packages/domain
@@ -90,6 +93,9 @@ importers:
       '@atlas/bank-architecture':
         specifier: workspace:*
         version: link:../../packages/bank-architecture
+      '@atlas/bank-llm':
+        specifier: workspace:*
+        version: link:../../packages/bank-llm
       '@atlas/desk':
         specifier: workspace:*
         version: link:../../packages/desk
@@ -123,6 +129,12 @@ importers:
         version: 8.3.4(@types/node@26.6.5)(esbuild@0.28.2)(tsx@4.23.15)
 
   packages/bank-architecture:
+    dependencies:
+      '@atlas/domain':
+        specifier: workspace:*
+        version: link:../domain
+
+  packages/bank-llm:
     dependencies:
       '@atlas/domain':
         specifier: workspace:*

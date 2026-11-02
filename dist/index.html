@@ -11,10 +11,10 @@
 <body>
 <div class="app" id="top">
 <header class="masthead" aria-label="复习工作台">
- <div class="mast-brand"><span class="brandmark">a.</span><span class="brandname">Atlas</span><span class="brand-cn">系统架构设计师</span></div>
+ <div class="mast-brand"><span class="brandmark">a.</span><span class="brandname">Atlas</span><span class="bankrow" id="banks"><button class="filterchip active" type="button" data-bank="architecture" aria-pressed="true">系统架构设计师</button><button class="filterchip" type="button" data-bank="llm" aria-pressed="false">大模型</button></span></div>
  <div class="mast-copy">
   <h1>对话题库复习</h1>
-  <p>先答再揭晓，四区讲解、费曼笔记，按间隔回来</p>
+  <p id="mastLead">先答再揭晓，四区讲解、费曼笔记，按间隔回来</p>
  </div>
  <div class="mast-side">
   <div class="mast-actions">
@@ -27,7 +27,7 @@
 </header>
 <div class="workspace">
  <aside class="sidebar" aria-label="题目目录">
-  <div class="side-header"><div class="side-title">知识目录 <span>/ 39</span></div><button class="mini-btn" id="toggleSidebar" type="button" aria-expanded="false">展开目录</button></div>
+  <div class="side-header"><div class="side-title">知识目录 <span id="tocCount">/ 39</span></div><button class="mini-btn" id="toggleSidebar" type="button" aria-expanded="false">展开目录</button></div>
   <input id="search" class="search" type="search" placeholder="搜索" aria-label="搜索题目">
   <div class="filterrow" id="filters">
    <button class="filterchip active" type="button" data-filter="all">全部</button><button class="filterchip" type="button" data-filter="new">不会</button><button class="filterchip" type="button" data-filter="vague">模糊</button><button class="filterchip" type="button" data-filter="mastered">掌握</button><button class="filterchip" type="button" data-filter="due">今日到期</button><button class="filterchip" type="button" data-filter="wrong">错题</button>
