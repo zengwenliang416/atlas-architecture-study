@@ -100,7 +100,7 @@ components:
 
 ## Colors（颜色）
 
-表面用石墨中性色：页底 `#fafafa`，卡片 `#ffffff`，抬起 `#f4f4f5`，正文 `#171717`，次要 `#525252`，弱化 `#737373`。发丝线是正文色 8% 透明。`#1f46a5` 只用于「开始自测」和链接。`#9f2d2d` 只用于正在看的目录项左边线、揭晓后的答案左边线，以及费曼门槛那一行的左边线。`#157a45` 只用于已掌握。焦点环是 2px 墨色轮廓。
+表面用石墨中性色：页底 `#fafafa`，卡片 `#ffffff`，抬起 `#f4f4f5`，正文 `#171717`，次要 `#525252`，弱化 `#737373`。发丝线是正文色 8% 透明。`#1f46a5` 只用于「开始自测」和链接。`#9f2d2d` 只用于正在看的目录项左边线、揭晓后的答案左边线、背题里正确选项的左边线、交卷对照的左边线和错题的「错」字，以及费曼门槛那一行的左边线。对的题目用弱化色打一个「对」，不用掌握用的绿。`#157a45` 只用于已掌握。焦点环是 2px 墨色轮廓。
 
 ## Typography（字体）
 
@@ -124,7 +124,7 @@ components:
 
 ## Components（组件）
 
-主按钮是 `.action.primary`，次按钮是 `.action`，小按钮是 `.small-btn` 与 `.mini-btn`。目录搜索是 `.search`。登录屏输入是 `.auth-card .search`。费曼笔记是 `textarea`。题目是 `.q-shell`。目录项是 `.toc-item`。筛选是 `.filterchip`。掌握程度是 `.state-btn`。提示是 `#toast`。空状态是 `.empty`。没有表格组件、菜单组件或模态框。按钮必须是 `type="button"`，除非它提交表单。
+主按钮是 `.action.primary`，次按钮是 `.action`，小按钮是 `.small-btn` 与 `.mini-btn`。目录搜索是 `.search`。登录屏输入是 `.auth-card .search`。费曼笔记是 `textarea`。题目是 `.q-shell`。目录项是 `.toc-item`。筛选是 `.filterchip`。掌握程度是 `.state-btn`。提示是 `#toast`。空状态是 `.empty`。交卷对照是 `.marked-paper`：一句计数、三个筛选、每题一行。错题用两列「你选 / 正解」，没有阴影，也不是指标卡。背题是 `.choice.answer-mark`。没有表格组件、菜单组件或模态框。按钮必须是 `type="button"`，除非它提交表单。
 
 ## Voice & Content（文案与内容）
 

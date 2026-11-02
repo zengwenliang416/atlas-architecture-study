@@ -16,8 +16,15 @@ import {
   hasWrongBlank,
   isMultiAnswer,
   ledgerLine,
+  choiceLabel,
+  correctLabel,
+  mergeMemorized,
   monthLoad,
   notesChanged,
+  paperMark,
+  paperQuestions,
+  parseMemorized,
+  wrongOptionNotes,
   parseAttempt,
   parseAttemptEntry,
   parseNoteEntry,
@@ -83,6 +90,79 @@ test('多选整组一致才算对，少选和错选都记错', () => {
   assert.equal(blankStatusText({ optionCount: 4, selected: 'A、B', letter: 'A、C', open: true }), '你选择了 A、B，本空应选 A、C');
   assert.equal(blankStatusText({ optionCount: 4, selected: 'A、C', letter: 'A、C', open: true }), '回答正确');
   assert.equal(blankStatusText({ optionCount: 4, letter: 'A、C', open: false }), '先选择选项，再揭晓');
+});
+
+test('批卷把你选和正解拆开，没有理由就不编', () => {
+  const rich = {
+    id: 'Q1',
+    title: '管道',
+    blanks: [{
+      label: '本题',
+      answer: '管道-过滤器风格',
+      letter: 'B',
+      options: [
+        { id: 'A', name: 'MVC风格', meaning: '一种分层', reason: '不是流水线', correct: false },
+        { id: 'B', name: '管道-过滤器风格', meaning: '步骤串联', reason: '数据沿管道流动', correct: true },
+      ],
+    }],
+  };
+  const wrong = paperQuestions([rich], { Q1_0: 'A' })[0].blanks[0];
+  assert.equal(wrong.yours, 'A · MVC风格');
+  assert.equal(wrong.answer, 'B · 管道-过滤器风格');
+  assert.equal(wrong.notes[0].reason, '不是流水线');
+  assert.equal(paperMark([wrong]), 'wrong');
+  const skipped = paperQuestions([rich], {})[0].blanks[0];
+  assert.equal(skipped.verdict, 'skip');
+  assert.equal(skipped.yours, '未选');
+  assert.equal(paperMark([skipped]), 'skip');
+  const multi = {
+    id: 'H137',
+    title: '教学',
+    blanks: [{
+      label: '本题',
+      answer: '乙、丙',
+      letter: 'B、C',
+      options: [
+        { id: 'A', name: '甲', meaning: '', reason: '', correct: false },
+        { id: 'B', name: '乙', meaning: '', reason: '', correct: true },
+        { id: 'C', name: '丙', meaning: '', reason: '', correct: true },
+      ],
+    }],
+  };
+  const picked = paperQuestions([multi], { H137_0: 'A' })[0].blanks[0];
+  assert.equal(picked.yours, 'A · 甲');
+  assert.equal(picked.answer, 'B · 乙；C · 丙');
+  assert.deepEqual(picked.notes, []);
+  assert.deepEqual(wrongOptionNotes(multi.blanks[0], 'A'), []);
+  const judged = paperQuestions([{
+    id: 'H215',
+    title: '判断',
+    blanks: [{
+      label: '本题',
+      answer: '错',
+      letter: 'B',
+      options: [
+        { id: 'A', name: '对', meaning: '', reason: '', correct: false },
+        { id: 'B', name: '错', meaning: '', reason: '', correct: true },
+      ],
+    }],
+  }], { H215_0: 'A' })[0].blanks[0];
+  assert.equal(judged.yours, 'A · 对');
+  assert.equal(judged.answer, 'B · 错');
+  const open = paperQuestions([{
+    id: 'Q9',
+    title: 'DSSA',
+    blanks: [{ label: '概念', answer: '参考架构', letter: '', options: [] }],
+  }], {})[0].blanks[0];
+  assert.equal(open.verdict, 'open');
+  assert.equal(open.yours, '');
+  assert.equal(open.answer, '参考架构');
+  assert.equal(correctLabel({ label: '概念', answer: '参考架构', letter: '', options: [] }), '参考架构');
+  assert.equal(choiceLabel(undefined, ''), '未选');
+  const stored = mergeMemorized('{}', 'architecture', ['Q1']);
+  assert.deepEqual(parseMemorized(stored, 'architecture'), ['Q1']);
+  assert.deepEqual(parseMemorized(mergeMemorized(stored, 'hcip', ['H1']), 'architecture'), ['Q1']);
+  assert.deepEqual(parseMemorized('nope', 'architecture'), []);
 });
 
 test('parseAttempt accepts the stored array and the text column', () => {

@@ -10,7 +10,6 @@ import {
   blankStorageKey,
   canRevealBlank,
   choiceClass,
-  compareLine,
   compareRows,
   confrontation,
   confrontationLine,
@@ -19,7 +18,12 @@ import {
   hasWrongBlank,
   isMultiAnswer,
   ledgerLine,
+  MEMORIZED_KEY,
+  mergeMemorized,
   monthLoad,
+  paperMark,
+  paperQuestions,
+  parseMemorized,
   siblingIds,
   tallyRows,
   tallyText,
@@ -39,6 +43,13 @@ let repository = createStudyRepository(DATA);
 let db = repository.records;
 let attemptLog = readAttemptLog();
 let noteHistory = readNoteHistory();
+let memorized = new Set(parseMemorized(globalThis.localStorage?.getItem(MEMORIZED_KEY), bankId));
+let topicFilter = '';
+let paperFilter = 'all';
+function saveMemorized(){
+ try{globalThis.localStorage?.setItem(MEMORIZED_KEY, mergeMemorized(globalThis.localStorage.getItem(MEMORIZED_KEY), bankId, memorized));}
+ catch{toast('当前浏览器无法持久保存学习记录');}
+}
 const persist = () => { if (!repository.persist()) toast('当前浏览器无法持久保存学习记录'); };
 
 const $=id=>document.getElementById(id);
@@ -55,11 +66,11 @@ const states={'new':'新学 / 不会','vague':'模糊','mastered':'已掌握'};
 const shanghaiClock=()=>new Date().toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false});
 
 function optionHTML(q,b,reveal){
- if(!b.options.length)return `<div class="preclose">这一空的原始A/B/C/D选项未出现在对话中。<br>先写出术语，再揭晓</div>`;
+ if(!b.options.length)return reveal?'':`<div class="preclose">这一空的原始A/B/C/D选项未出现在对话中。<br>先写出术语，再揭晓</div>`;
  const pick=selected[selectionKey(q)];
  return `<div class="option-list">`+b.options.map(o=>{
  const chosen=pick!=null&&pick!==''&&(String(pick).includes('、')?pick.split('、').includes(o.id):pick===o.id);
- const cl=choiceClass({chosen,open:reveal,correct:o.correct});
+ const cl=choiceClass({chosen,open:reveal,correct:o.correct})+(mode==='memorize'&&o.correct?' answer-mark':'');
  return `<button type="button" class="${cl}" data-pick="${q.id}" data-choice="${o.id}" aria-pressed="${chosen}"><span class="letter">${esc(o.id)}</span><span>${esc(o.name)}</span></button>`;
  }).join('')+`</div>`;
 }
@@ -82,7 +93,7 @@ function essayHTML(q){
  return `<div class="essay-full" id="essay-${q.id}"><div class="essay-header"><div><h3>完整论文参考范文 · ${esc(name)}</h3><p>两篇均为教学示例；可切换阅读并复制，项目经历与量化数据应由本人真实事实替换。</p></div><div class="essay-tabs"><button type="button" class="small-btn ${key==='newapi'?'essay-selected':''}" data-essaycase="${q.id}" data-case="newapi">New API 网关</button><button type="button" class="small-btn ${key==='ecommerce'?'essay-selected':''}" data-essaycase="${q.id}" data-case="ecommerce">电商平台</button></div></div><div class="essay-copybar"><span>${esc(q.id)} · ${esc(q.title)}</span><button type="button" class="small-btn" data-copyessay="${q.id}">复制本文</button></div><div class="essay-body">${paras.map((s,i)=>`<section><h4>${esc(s[0])}</h4><p>${esc(s[1])}</p></section>`).join('')}</div></div>`;
 }
 function questionCard(q){
- const s=db[q.id],b=getBlank(q),cardReveal=revealed.has(q.id),pick=selected[selectionKey(q)];
+ const s=db[q.id],b=getBlank(q),memorize=mode==='memorize',cardReveal=memorize||revealed.has(q.id),pick=selected[selectionKey(q)];
  const blankKey=selectionKey(q);
  const blankOpen=cardReveal||revealedBlanks.has(blankKey);
  const response=esc(blankStatusText({optionCount:b.options.length,selected:pick,letter:b.letter,open:blankOpen}));
@@ -125,9 +136,11 @@ function questionCard(q){
  const ledgerHead=hasGloss?'<h3><span class="num">③</span>四个选项逐项解析 <span class="pill">是什么 · 对错 · 为什么</span></h3>':'<h3><span class="num">③</span>选项逐项解析</h3>';
  const conceptSection=q.concept?`<section class="paper"><h3><span class="num">②</span>概念</h3>${conceptHTML(q,cardReveal)}</section>`:'';
  const lowerSection=(q.core.length||q.essay_cases)?`<section class="paper lower revealed-only"><h3><span class="num">④</span>总结、例子、易错点与口诀</h3>${explanations}</section>`:'';
+ const remembered=memorized.has(q.id);
+ const revealBtn=memorize?`<button type="button" class="small-btn" data-memorized="${q.id}" aria-pressed="${remembered}">${remembered?'已记住':'记住了'}</button>`:`<button type="button" class="small-btn reveal" data-reveal="${q.id}" aria-expanded="${cardReveal}">${cardReveal?'再次遮挡':'揭晓答案'}</button>`;
  return `<article class="q-shell ${cardReveal?'':'only-masked'} ${mode==='stems'&&!cardReveal?'stem-only':''}" id="${q.id}">
  <div class="q-heading"><div><h2><span class="q-id">${esc(q.id)}</span>${esc(q.title)}</h2><div class="meta-line">${esc(q.kind)}　/　${esc(q.topic)}　·　${q.blanks.length}个填空/设问</div></div>
- <div class="q-actions"><button type="button" class="small-btn reveal" data-reveal="${q.id}" aria-expanded="${cardReveal}">${cardReveal?'再次遮挡':'揭晓答案'}</button>${hasPickedWrong(s.attempt)&&siblingIds(DATA,q.id).length?`<button type="button" class="small-btn" data-drill="${q.id}">同组辨析</button>`:''}<button type="button" class="small-btn" data-toggle-feynman="${q.id}">费曼三问</button></div></div>
+ <div class="q-actions">${revealBtn}${hasPickedWrong(s.attempt)&&siblingIds(DATA,q.id).length?`<button type="button" class="small-btn" data-drill="${q.id}">同组辨析</button>`:''}<button type="button" class="small-btn" data-toggle-feynman="${q.id}">费曼三问</button></div></div>
  <div class="zones">
  <section class="paper"><h3><span class="num">①</span>${cardReveal?'题目识别 / 正确答案':'题目识别'}</h3><span class="pill">${esc(q.topic)} · ${esc(q.kind)}</span>
  <div class="stem">${esc(q.stem)}</div>${questions}
@@ -143,12 +156,14 @@ function questionCard(q){
  <div class="feynman-grid">${['① 我怎么讲给零基础同学听？','② 我卡在哪个步骤或选项？','③ 如果只留一句，我记住什么？'].map((label,i)=>`<div class="fyn"><label for="fyn-${q.id}-${i}">${label}</label><textarea id="fyn-${q.id}-${i}" data-note="${q.id}" data-ni="${i}" placeholder="用自己的话写">${esc(s.notes[i]||'')}</textarea></div>`).join('')}</div></section>
  <div class="statusbar"><div class="state-group"><span class="recordline" style="padding-top:9px">掌握程度：</span>${[['new','新学/不会'],['vague','模糊'],['mastered','已掌握']].map(([v,label])=>`<button class="state-btn ${s.level===v?'active '+v:''}" data-status="${q.id}" data-value="${v}" aria-pressed="${s.level===v}">${label}</button>`).join('')}</div>
  <div class="recordline">上次标记：${esc(s.last||'未标记')}<br>下一次复习：<b>${esc(s.next)}</b>　已复习：${s.count}次</div>
- <div class="review-mark"><button type="button" class="reviewbtn" data-complete="${q.id}" ${reviewed||!ready?'disabled aria-disabled="true"':''}>${reviewed?'今日已复习':'今天复习完'}</button><p class="margin-rule" data-gate="${q.id}" ${reviewed||ready?'hidden':''}>先留下一句自己的话，再标今天复习完。</p></div></div>
+ ${memorize?'':`<div class="review-mark"><button type="button" class="reviewbtn" data-complete="${q.id}" ${reviewed||!ready?'disabled aria-disabled="true"':''}>${reviewed?'今日已复习':'今天复习完'}</button><p class="margin-rule" data-gate="${q.id}" ${reviewed||ready?'hidden':''}>先留下一句自己的话，再标今天复习完。</p></div>`}</div>
  </article>`;
 }
 function matches(q){
  if(filter==='due'&&!due(q))return false;
  if(filter==='wrong'&&!hasWrongBlank(db[q.id].attempt))return false;
+ if(filter==='unmemorized'&&memorized.has(q.id))return false;
+ if(mode==='memorize'&&topicFilter&&q.topic!==topicFilter)return false;
  if(['new','vague','mastered'].includes(filter)&&db[q.id].level!==filter)return false;
  if(keyword){const s=[q.title,q.topic,q.stem,q.concept,q.motto,q.example,...q.blanks.flatMap(b=>[b.answer,...b.options.flatMap(o=>[o.name,o.reason,o.meaning])])].join(' ').toLowerCase();if(!s.includes(keyword.toLowerCase()))return false}
  return true;
@@ -176,9 +191,11 @@ function renderQuestions(){
  else if(list.length&&!list.some(q=>q.id===focusId))focusId=list[0].id;
  const a=$('questionCards');a.innerHTML=show.length?show.map(questionCard).join(''):'<div class="empty">这个筛选下没有题目</div>';
  const currIndex=list.findIndex(q=>q.id===focusId);
- $('modeLabel').textContent=mode==='all'?'全部题目':mode==='due'?'今日到期':mode==='stems'?'只看题干':exam?.kind==='siblings'?'同组辨析':exam?'自测':'逐题学习';
- const focusHint=`第 ${list.length&&currIndex>=0?currIndex+1:0} / ${list.length} 题，方向键切题，1 到 4 选择，[ ] 换空，Enter 揭晓，揭晓后 c 完成`;
- $('modeHint').textContent=mode==='focus'?(exam?`${focusHint}，可遮挡再交卷`:focusHint):`列出 ${show.length} 题`;
+ $('modeLabel').textContent=mode==='memorize'?'背题':mode==='all'?'全部题目':mode==='due'?'今日到期':mode==='stems'?'只看题干':exam?.kind==='siblings'?'同组辨析':exam?'自测':'逐题学习';
+ const place=`第 ${list.length&&currIndex>=0?currIndex+1:0} / ${list.length} 题`;
+ const focusHint=`${place}，方向键切题，1 到 4 选择，[ ] 换空，Enter 揭晓，揭晓后 c 完成`;
+ $('modeHint').textContent=mode==='memorize'?`${place}。题干和答案都在。记住了只留在这台浏览器，不推进间隔。方向键切题`:mode==='focus'?(exam?`${focusHint}，可遮挡再交卷`:focusHint):`列出 ${show.length} 题`;
+ renderTopic();
  $('maskBtn').hidden=!exam;$('submitBtn').hidden=!exam;
  const dockPos=currIndex<0?0:currIndex+1;
  $('prevBtn').disabled=currIndex<=0;$('nextBtn').disabled=currIndex<0||currIndex>=list.length-1;$('dockCounter').innerHTML='Q'+dockPos+' <small>/ '+list.length+'</small>';$('mobilePrev').disabled=currIndex<=0;$('mobileNext').disabled=currIndex<0||currIndex>=list.length-1;
@@ -204,16 +221,55 @@ function renderPlan(){
  $('futureList').innerHTML=nextItems.length?planRows(nextItems,q=>esc(db[q.id].next),''):'<p class="lock">暂时没有未来复习安排</p>';
  $('monthLoad').innerHTML=monthHTML(monthLoad(day(),DATA.map(q=>db[q.id].next)));
 }
+function renderTopic(){
+ const wrap=$('topicWrap');const select=$('topicFilter');const chip=$('unmemorizedChip');
+ const on=mode==='memorize';
+ if(wrap)wrap.hidden=!on;
+ if(chip)chip.hidden=!on;
+ if(!select)return;
+ const topics=[...new Set(DATA.map(q=>q.topic))];
+ if(select.dataset.bank!==bankId){
+  select.innerHTML=`<option value="">全部知识域</option>`+topics.map(topic=>`<option value="${esc(topic)}">${esc(topic)}</option>`).join('');
+  select.dataset.bank=bankId;
+ }
+ if(topicFilter&&!topics.includes(topicFilter))topicFilter='';
+ select.value=topicFilter;
+}
 function renderCompare(){
  const box=$('compareSummary');
  if(!compare){box.innerHTML='';return}
- box.innerHTML=`<div class="compare-summary"><h3>交卷对照</h3><p>${esc(tallyText(compare.tally))}</p><ol>${compare.lines.map(line=>`<li>${esc(line)}</li>`).join('')}</ol></div>`;
+ const items=compare.questions.filter(item=>{
+  if(paperFilter==='wrong')return item.blanks.some(blank=>blank.verdict==='wrong');
+  if(paperFilter==='skip')return item.blanks.some(blank=>blank.verdict==='skip');
+  return true;
+ });
+ const rows=items.map(item=>{
+  const mark=paperMark(item.blanks);
+  const stamp=mark==='wrong'?'<span class="pen-mark">错</span>':mark==='right'?'<span class="quiet-mark">对</span>':mark==='skip'?'<span class="quiet-mark">未答</span>':'<span class="quiet-mark">概念填空</span>';
+  const pairs=item.blanks.map(blank=>{
+   if(blank.verdict==='open')return `<p class="marked-open">${esc(blank.label)}　${esc(blank.answer)}</p>`;
+   if(blank.verdict!=='wrong'&&blank.verdict!=='skip')return '';
+   const notes=blank.notes.map(note=>{
+    const bits=[];
+    if(note.meaning)bits.push(`是什么：${esc(note.meaning)}`);
+    if(note.reason)bits.push(`为什么错：${esc(note.reason)}`);
+    return `<p>${esc(note.letter)} ${esc(note.name)}。${bits.join('')}</p>`;
+   }).join('');
+   const extra=notes?`<details class="marked-note"><summary>这一项为什么不选</summary>${notes}</details>`:'';
+   const label=item.blanks.length>1?`<span class="marked-label">${esc(blank.label)}</span>`:'';
+   return `${label}<div class="pair"><div class="yours"><span>你选</span><b>${esc(blank.yours)}</b></div><div><span>正解</span><b>${esc(blank.answer)}</b></div></div>${extra}`;
+  }).join('');
+  return `<li class="marked-row" id="mark-${esc(item.questionId)}"><a href="#${esc(item.questionId)}" data-link="${esc(item.questionId)}">${esc(item.questionId)} ${esc(item.title)}</a>${stamp}${pairs}</li>`;
+ }).join('');
+ const filters=[['all','全部'],['wrong','只看错题'],['skip','未答']].map(([id,label])=>`<button type="button" class="filterchip ${paperFilter===id?'active':''}" data-paper="${id}">${label}</button>`).join('');
+ box.innerHTML=`<section class="marked-paper"><h3>交卷对照</h3><p class="marked-tally">${esc(tallyText(compare.tally))}。错的写你选和正解，对的只打一个勾。</p><div class="marked-filters">${filters}</div><ol class="marked-list">${rows||'<li class="quiet-mark">这个筛选下没有题目</li>'}</ol></section>`;
 }
 function rerender(){recalc();renderTOC();renderQuestions();renderPlan();renderCompare()}
 function jump(id){
  if(!DATA.find(q=>q.id===id))return;
- if(!matches(DATA.find(q=>q.id===id))){filter='all';keyword='';$('search').value=''}
- focusId=id;mode='focus';rerender();$('questionArea').scrollIntoView({behavior:'smooth',block:'start'});
+ const stay=mode==='memorize';
+ if(!matches(DATA.find(q=>q.id===id))){filter='all';keyword='';$('search').value='';topicFilter=''}
+ focusId=id;if(!stay)mode='focus';rerender();$('questionArea').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function changeBlank(id,index){activeBlanks[id]=index;renderQuestions()}
 function toggleReveal(id){revealed.has(id)?revealed.delete(id):revealed.add(id);renderQuestions()}
@@ -272,20 +328,27 @@ function submitExam(){
  const rows=compareRows(questions,selected);
  for(const question of questions)db[question.id].attempt=attemptOf(question,selected);
  persist();
- compare={lines:rows.map(compareLine),tally:tallyRows(rows)};
+ paperFilter='all';compare={questions:paperQuestions(questions,selected),tally:tallyRows(rows)};
  rerender();toast('已交卷：'+tallyText(compare.tally));
 }
 $('startBtn').onclick=startExam;
 $('maskBtn').onclick=maskExam;
 $('submitBtn').onclick=submitExam;
 $('dueBtn').onclick=()=>{filter='due';keyword='';$('search').value='';mode='due';rerender();$('questionArea').scrollIntoView({behavior:'smooth',block:'start'})};
-$('expandBtn').onclick=showAll;$('stemBtn').onclick=maskAll;
+$('expandBtn').onclick=showAll;$('stemBtn').onclick=maskAll;$('memorizeBtn').onclick=startMemorize;
 $('search').oninput=e=>{keyword=e.target.value;mode='all';rerender()};
-$('prevBtn').onclick=()=>{const arr=eligible(),i=arr.findIndex(q=>q.id===focusId);if(i>0)jump(arr[i-1].id)};$('mobilePrev').onclick=()=> $('prevBtn').click();
-$('nextBtn').onclick=()=>{const arr=eligible(),i=arr.findIndex(q=>q.id===focusId);if(i<arr.length-1)jump(arr[i+1].id)};$('mobileNext').onclick=()=> $('nextBtn').click();
+function step(delta){
+ const arr=eligible();const i=arr.findIndex(q=>q.id===focusId);const next=arr[i+delta];
+ if(!next)return;
+ focusId=next.id;rerender();document.getElementById(next.id)?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+$('prevBtn').onclick=()=>step(-1);$('mobilePrev').onclick=()=> $('prevBtn').click();
+$('nextBtn').onclick=()=>step(1);$('mobileNext').onclick=()=> $('nextBtn').click();
 document.addEventListener('click',e=>{
  const b=e.target.closest('button');if(b){
- if(b.dataset.filter){filter=b.dataset.filter;mode=filter==='due'?'due':'all';rerender();return}
+ if(b.dataset.paper){paperFilter=b.dataset.paper;renderCompare();return}
+ if(b.dataset.memorized){const id=b.dataset.memorized;memorized.has(id)?memorized.delete(id):memorized.add(id);saveMemorized();rerender();return}
+ if(b.dataset.filter){filter=b.dataset.filter;if(mode!=='memorize')mode=filter==='due'?'due':'all';rerender();return}
  if(b.dataset.jump){jump(b.dataset.jump);return}
  if(b.dataset.drill){startDrill(b.dataset.drill);return}
  if(b.dataset.reveal){toggleReveal(b.dataset.reveal);return}
@@ -303,10 +366,12 @@ document.addEventListener('click',e=>{
  const a=e.target.closest('[data-link]');if(a){e.preventDefault();jump(a.dataset.link)}
 });
 document.addEventListener('input',e=>{
+ if(e.target.id==='topicFilter'){topicFilter=e.target.value;rerender();return}
  if(e.target.dataset.note){const id=e.target.dataset.note;const i=+e.target.dataset.ni;db[id].notes[i]=e.target.value;persist();paintGate(id)}
  if(e.target.dataset.essay){db[e.target.dataset.essay].essay=e.target.value;persist()}
 });
 document.addEventListener('change',e=>{
+ if(e.target.id==='topicFilter'){topicFilter=e.target.value;rerender();return}
  if(e.target.dataset?.note){const id=e.target.dataset.note;noteHistory=appendNoteHistory(id, db[id].notes, new Date().toISOString())}
 });
 async function copyText(text){
@@ -320,7 +385,8 @@ function useBank(nextId){
  DATA=next.questions;
  repository=createStudyRepository(DATA, globalThis.localStorage, next.storageKey);
  db=repository.records;
- revealed.clear();revealedBlanks.clear();selected={};compare=null;exam=null;mode='focus';filter='all';keyword='';
+ revealed.clear();revealedBlanks.clear();selected={};compare=null;exam=null;mode='focus';filter='all';keyword='';topicFilter='';paperFilter='all';
+ memorized=new Set(parseMemorized(globalThis.localStorage?.getItem(MEMORIZED_KEY), nextId));
  const search=$('search');if(search)search.value='';
  focusId=DATA[0].id;
  activeBlanks=nextId==='architecture'?{Q9:2}:{};
@@ -338,6 +404,12 @@ function applyChoice(q,choice){
  }
  selected[key]=choice;
 }
+function startMemorize(){
+ exam=null;compare=null;paperFilter='all';mode='memorize';filter='all';keyword='';topicFilter='';
+ const search=$('search');if(search)search.value='';
+ if(!DATA.some(q=>q.id===focusId))focusId=DATA[0].id;
+ rerender();$('questionArea').scrollIntoView({behavior:'smooth',block:'start'});
+}
 function exportNotes(){const lines=[bankId==='architecture'?'系统架构设计师 · 对话题库费曼笔记':BANKS[bankId].name+' · 费曼笔记','导出日期：'+new Date().toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}),'题目总数：'+DATA.length,'======================='];
  for(const q of DATA){const s=db[q.id];lines.push('',q.id+' '+q.title,'题目：'+q.stem,'答案：'+answersSummary(q),'状态：'+states[s.level]+'；复习次数：'+s.count+'；下一次：'+s.next,'费曼一问：'+(s.notes[0]||'（未填写）'),'费曼二问：'+(s.notes[1]||'（未填写）'),'费曼三问：'+(s.notes[2]||'（未填写）'),'-----------------------')}
  return lines.join('\n')}
@@ -354,6 +426,10 @@ document.addEventListener('keydown',e=>{
  const t=e.target;
  if(e.ctrlKey||e.metaKey||e.altKey||t?.isContentEditable)return;
  if(['INPUT','TEXTAREA','SELECT','BUTTON','A'].includes(t?.tagName))return;
+ if(mode==='memorize'){
+  if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();(e.key==='ArrowLeft'?$('prevBtn'):$('nextBtn')).click()}
+  return;
+ }
  if(mode!=='focus')return;
  if(e.key==='ArrowLeft'||e.key==='ArrowRight'){
   e.preventDefault();(e.key==='ArrowLeft'?$('prevBtn'):$('nextBtn')).click();

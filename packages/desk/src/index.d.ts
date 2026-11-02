@@ -107,6 +107,24 @@ export function compareRows(questions: readonly DeskQuestion[], selected: Readon
 export function compareLine(row: CompareRow): string;
 export function tallyRows(rows: readonly CompareRow[]): Tally;
 export function tallyText(tally: Tally): string;
+export const MEMORIZED_KEY: 'atlas_review_memorized_v1';
+export function parseMemorized(raw: string | null | undefined, scope: string): string[];
+export function mergeMemorized(raw: string | null | undefined, scope: string, ids: readonly string[]): string;
+export function choiceLabel(blank: DeskBlank | undefined, selected: string | undefined): string;
+export function correctLabel(blank: DeskBlank | undefined): string;
+export type WrongOptionNote = { letter: string; name: string; meaning: string; reason: string };
+export function wrongOptionNotes(blank: DeskBlank | undefined, selected: string | undefined): WrongOptionNote[];
+export type PaperBlank = {
+  index: number;
+  label: string;
+  verdict: BlankVerdict;
+  yours: string;
+  answer: string;
+  notes: WrongOptionNote[];
+};
+export type PaperQuestion = { questionId: string; title: string; blanks: PaperBlank[] };
+export function paperQuestions(questions: readonly DeskQuestion[], selected: Readonly<Record<string, string>>): PaperQuestion[];
+export function paperMark(blanks: readonly { verdict: BlankVerdict }[]): BlankVerdict;
 export function hasPickedWrong(attempt: readonly string[] | null | undefined): boolean;
 export function notesChanged(previous: readonly string[], next: readonly string[]): boolean;
 export function hasNoteText(notes: readonly string[]): boolean;

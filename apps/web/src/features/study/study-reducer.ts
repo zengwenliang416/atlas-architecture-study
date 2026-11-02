@@ -1,8 +1,11 @@
-export type StudyMode = 'focus' | 'all' | 'due' | 'stems';
-export type LevelFilter = 'all' | 'new' | 'vague' | 'mastered' | 'due' | 'wrong';
+import type { PaperQuestion } from '@atlas/desk';
+
+export type StudyMode = 'focus' | 'all' | 'due' | 'stems' | 'memorize';
+export type LevelFilter = 'all' | 'new' | 'vague' | 'mastered' | 'due' | 'wrong' | 'unmemorized';
+export type PaperFilter = 'all' | 'wrong' | 'skip';
 
 export type CompareView = {
-  lines: string[];
+  questions: PaperQuestion[];
   tally: { right: number; wrong: number; skip: number; open: number };
 };
 
@@ -15,6 +18,8 @@ export type StudyUiState = {
   mode: StudyMode;
   focusId: string;
   filter: LevelFilter;
+  topic: string;
+  paperFilter: PaperFilter;
   keyword: string;
   revealed: string[];
   revealedBlanks: string[];
@@ -32,6 +37,8 @@ export type StudyUiAction =
   | { type: 'toast'; message: string | null }
   | { type: 'mode'; mode: StudyMode }
   | { type: 'filter'; filter: LevelFilter }
+  | { type: 'topic'; topic: string }
+  | { type: 'paper-filter'; filter: PaperFilter }
   | { type: 'keyword'; keyword: string }
   | { type: 'focus'; id: string }
   | { type: 'toggle-reveal'; id: string }
@@ -54,6 +61,8 @@ export const initialStudyUi: StudyUiState = {
   mode: 'focus',
   focusId: 'Q1',
   filter: 'all',
+  topic: '',
+  paperFilter: 'all',
   keyword: '',
   revealed: [],
   revealedBlanks: [],
@@ -72,10 +81,19 @@ export function studyUiReducer(state: StudyUiState, action: StudyUiAction): Stud
     case 'toast':
       return { ...state, toast: action.message };
     case 'mode':
+      if (action.mode === 'memorize') {
+        return { ...state, mode: 'memorize', exam: null, compare: null, filter: 'all', keyword: '', topic: '', paperFilter: 'all' };
+      }
       return { ...state, mode: action.mode };
     case 'filter':
+      if (state.mode === 'memorize') return { ...state, filter: action.filter };
       return { ...state, filter: action.filter, mode: action.filter === 'due' ? 'due' : 'all' };
+    case 'topic':
+      return { ...state, topic: action.topic };
+    case 'paper-filter':
+      return { ...state, paperFilter: action.filter };
     case 'keyword':
+      if (state.mode === 'memorize') return { ...state, keyword: action.keyword };
       return { ...state, keyword: action.keyword, mode: 'all' };
     case 'focus':
       return { ...state, focusId: action.id, mode: 'focus' };
@@ -125,7 +143,7 @@ export function studyUiReducer(state: StudyUiState, action: StudyUiAction): Stud
       if (!state.exam) return state;
       return { ...state, revealed: [], revealedBlanks: [], mode: 'focus' };
     case 'graded':
-      return { ...state, compare: action.compare };
+      return { ...state, compare: action.compare, paperFilter: 'all' };
     case 'start':
       return {
         ...state,
@@ -138,8 +156,10 @@ export function studyUiReducer(state: StudyUiState, action: StudyUiAction): Stud
         mode: 'focus',
         exam: { ids: action.ids, kind: action.kind ?? 'paper' },
         compare: null,
+        paperFilter: 'all',
       };
     case 'jump':
+      if (state.mode === 'memorize' && action.matches) return { ...state, focusId: action.id };
       return action.matches
         ? { ...state, focusId: action.id, mode: 'focus' }
         : { ...state, focusId: action.id, mode: 'focus', filter: 'all', keyword: '' };
