@@ -40,7 +40,7 @@ apps/api/                      NestJS API、会话和 PostgreSQL
 packages/domain/               复习规则
 packages/desk/                 题卡纯函数
 packages/bank-architecture/    系统架构设计师题面
-packages/bank-llm/             大模型题面
+packages/bank-hcip/             HCIP AI 题面
 src/                           静态站点
 docs/                          当前行为：架构、子系统、操作、事故
 .agents/notes/                 决定和被放弃的方案

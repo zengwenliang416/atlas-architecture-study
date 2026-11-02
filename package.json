@@ -8,7 +8,7 @@
   "scripts": {
     "build": "pnpm --filter @atlas/domain build && pnpm --filter @atlas/api build && pnpm --filter @atlas/web build",
     "dev": "pnpm --filter @atlas/domain build && pnpm --parallel --filter @atlas/api --filter @atlas/web dev",
-    "test": "pnpm --filter @atlas/domain test && pnpm --filter @atlas/desk test && pnpm --filter @atlas/bank-llm test && node tests/smoke.mjs && node tests/startup.mjs",
+    "test": "pnpm --filter @atlas/domain test && pnpm --filter @atlas/desk test && pnpm --filter @atlas/bank-hcip test && node tests/smoke.mjs && node tests/startup.mjs",
     "test:api": "pnpm --filter @atlas/api test",
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",

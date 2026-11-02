@@ -1,6 +1,6 @@
 # 静态站点
 
-`src/` 是可在浏览器里直接打开的复习页，`dist/` 是它的部署副本。学习状态写入 `localStorage`。系统架构设计师的键名是 `architecture_review_focused_notes_v2`，大模型的键名是 `llm_review_focused_notes_v1`。
+`src/` 是可在浏览器里直接打开的复习页，`dist/` 是它的部署副本。学习状态写入 `localStorage`。系统架构设计师的键名是 `architecture_review_focused_notes_v2`，HCIP AI 的键名是 `hcip_review_focused_notes_v1`。
 
 `src/storage.js` 的间隔序列与 `REVIEW_INTERVALS` 相同，日历日按 Asia/Shanghai，与 [复习规则](domain.md) 同一天界，模块并不共用。填空能否揭晓、对照行和月历格子来自 `src/desk.js`，与 `packages/desk` 同一份纯函数。卡片标记仍由静态页和 React 各画一份。
 

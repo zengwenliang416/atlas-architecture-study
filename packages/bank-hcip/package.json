@@ -1,5 +1,5 @@
 {
-  "name": "@atlas/bank-llm",
+  "name": "@atlas/bank-hcip",
   "private": true,
   "type": "module",
   "exports": {

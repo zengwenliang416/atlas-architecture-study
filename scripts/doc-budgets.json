@@ -19,7 +19,7 @@
     "docs/subsystems/static-site.md": 510,
     "docs/subsystems/web.md": 156,
     "packages/bank-architecture/AGENTS.md": 65,
-    "packages/bank-llm/AGENTS.md": 52,
+    "packages/bank-hcip/AGENTS.md": 52,
     "packages/desk/AGENTS.md": 49,
     "packages/domain/AGENTS.md": 68,
     "src/AGENTS.md": 65

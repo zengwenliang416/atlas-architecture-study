@@ -12,10 +12,11 @@ const today = '2026-10-12';
 
 test('question ids cover both banks and a full paper can be submitted', () => {
   assert.equal(questionIdSchema.safeParse('Q1').success, true);
-  assert.equal(questionIdSchema.safeParse('L305').success, true);
+  assert.equal(questionIdSchema.safeParse('H305').success, true);
+  assert.equal(questionIdSchema.safeParse('L305').success, false);
   assert.equal(questionIdSchema.safeParse('X1').success, false);
   const items = Array.from({ length: 305 }, (_, index) => ({
-    questionId: `L${index + 1}`,
+    questionId: `H${index + 1}`,
     version: 0,
     attempt: ['right'] as const,
   }));

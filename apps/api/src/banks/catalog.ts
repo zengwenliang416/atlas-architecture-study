@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { BANK_ID as ARCHITECTURE_ID, DATA as ARCHITECTURE } from '@atlas/bank-architecture';
-import { BANK_ID as LLM_ID, DATA as LLM } from '@atlas/bank-llm';
+import { BANK_ID as HCIP_ID, DATA as HCIP } from '@atlas/bank-hcip';
 import type { Question } from '@atlas/domain';
 
 export type BankCatalogEntry = {
@@ -18,7 +18,7 @@ function entry(id: string, questions: Question[]): BankCatalogEntry {
 
 export const BANKS: Record<string, BankCatalogEntry> = {
   [ARCHITECTURE_ID]: entry(ARCHITECTURE_ID, ARCHITECTURE),
-  [LLM_ID]: entry(LLM_ID, LLM),
+  [HCIP_ID]: entry(HCIP_ID, HCIP),
 };
 
 export function bankQuestions(bankId: string): Question[] | undefined {

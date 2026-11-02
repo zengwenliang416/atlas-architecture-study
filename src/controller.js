@@ -1,5 +1,5 @@
 import { DATA as ARCH_DATA } from './data.js';
-import { DATA as LLM_DATA } from './llm-data.js';
+import { DATA as HCIP_DATA } from './hcip-data.js';
 import {
   SCHEDULE_PREVIEW,
   answersSummary,
@@ -22,7 +22,7 @@ import { createStudyRepository, day, plusDays, REVIEW_INTERVALS } from './storag
 // data and persistence are injected from dedicated modules.
 const BANKS = {
  architecture: { name: '系统架构设计师', storageKey: 'architecture_review_focused_notes_v2', questions: ARCH_DATA, lead: '先答再揭晓，四区讲解、费曼笔记，按间隔回来' },
- llm: { name: '大模型', storageKey: 'llm_review_focused_notes_v1', questions: LLM_DATA, lead: '先答再揭晓，费曼笔记，按间隔回来' },
+ hcip: { name: 'HCIP AI', storageKey: 'hcip_review_focused_notes_v1', questions: HCIP_DATA, lead: '先答再揭晓，费曼笔记，按间隔回来' },
 };
 let bankId = 'architecture';
 let DATA = ARCH_DATA;

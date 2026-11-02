@@ -32,9 +32,9 @@ importers:
       '@atlas/bank-architecture':
         specifier: workspace:*
         version: link:../../packages/bank-architecture
-      '@atlas/bank-llm':
+      '@atlas/bank-hcip':
         specifier: workspace:*
-        version: link:../../packages/bank-llm
+        version: link:../../packages/bank-hcip
       '@atlas/domain':
         specifier: workspace:*
         version: link:../../packages/domain
@@ -93,9 +93,9 @@ importers:
       '@atlas/bank-architecture':
         specifier: workspace:*
         version: link:../../packages/bank-architecture
-      '@atlas/bank-llm':
+      '@atlas/bank-hcip':
         specifier: workspace:*
-        version: link:../../packages/bank-llm
+        version: link:../../packages/bank-hcip
       '@atlas/desk':
         specifier: workspace:*
         version: link:../../packages/desk
@@ -134,7 +134,7 @@ importers:
         specifier: workspace:*
         version: link:../domain
 
-  packages/bank-llm:
+  packages/bank-hcip:
     dependencies:
       '@atlas/domain':
         specifier: workspace:*

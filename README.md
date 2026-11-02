@@ -12,7 +12,7 @@
 
 ## 运行
 
-前后端在 pnpm 工作区里。系统架构设计师题目在 `packages/bank-architecture`，大模型题目在 `packages/bank-llm`，复习规则在 `packages/domain`。API 是 NestJS + Fastify，数据库是 PostgreSQL。`src/` 和 `dist/` 仍是静态站点。
+前后端在 pnpm 工作区里。系统架构设计师题目在 `packages/bank-architecture`，HCIP AI 题目在 `packages/bank-hcip`，复习规则在 `packages/domain`。API 是 NestJS + Fastify，数据库是 PostgreSQL。`src/` 和 `dist/` 仍是静态站点。
 
 ```bash
 pnpm install

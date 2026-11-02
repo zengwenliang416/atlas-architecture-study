@@ -1,5 +1,5 @@
 import { BANK_ID as ARCHITECTURE_ID, DATA as ARCHITECTURE } from '@atlas/bank-architecture';
-import { BANK_ID as LLM_ID, BANK_NAME, DATA as LLM } from '@atlas/bank-llm';
+import { BANK_ID as HCIP_ID, BANK_NAME, DATA as HCIP } from '@atlas/bank-hcip';
 import type { Question } from '@atlas/domain';
 
 export type StudyBank = {
@@ -17,9 +17,9 @@ export const STUDY_BANKS: StudyBank[] = [
     lead: '先答再揭晓，四区讲解、费曼笔记，按间隔回来',
   },
   {
-    id: LLM_ID,
+    id: HCIP_ID,
     name: BANK_NAME,
-    questions: LLM,
+    questions: HCIP,
     lead: '先答再揭晓，费曼笔记，按间隔回来',
   },
 ];

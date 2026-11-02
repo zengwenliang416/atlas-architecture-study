@@ -4,11 +4,11 @@ import { DATA } from './questions.js';
 
 const lettersOf = (answer) => answer.split(/[、,，]/).map((part) => part.trim()).filter(Boolean);
 
-test('大模型题库保持原文题量和编号', () => {
+test('HCIP AI 题库保持原文题量和编号', () => {
   assert.equal(DATA.length, 305);
   assert.deepEqual(
     DATA.map((question) => question.id),
-    Array.from({ length: 305 }, (_, index) => `L${index + 1}`),
+    Array.from({ length: 305 }, (_, index) => `H${index + 1}`),
   );
   assert.equal(new Set(DATA.map((question) => question.id)).size, 305);
   const counts = { 填空题: 0, 单选题: 0, 多选题: 0, 判断题: 0 };
@@ -19,7 +19,7 @@ test('大模型题库保持原文题量和编号', () => {
 test('答案字母都在选项里，填空答案非空，解析不编造', () => {
   for (const question of DATA) {
     assert.equal(question.blanks.length, 1, question.id);
-    assert.equal(question.topic, '大模型');
+    assert.equal(question.topic, 'HCIP AI');
     const blank = question.blanks[0];
     assert.ok(blank.answer.trim(), `${question.id} 答案为空`);
     assert.equal(question.concept, '');
