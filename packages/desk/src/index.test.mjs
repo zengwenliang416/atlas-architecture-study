@@ -1,16 +1,29 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  attemptEntries,
   attemptOf,
   blankStatusText,
   canRevealBlank,
   compareLine,
   compareRows,
+  confrontation,
+  confrontationLine,
+  drillIds,
   gradeBlank,
+  hasNoteText,
+  hasPickedWrong,
   hasWrongBlank,
+  ledgerLine,
   monthLoad,
+  notesChanged,
   parseAttempt,
+  parseAttemptEntry,
+  parseNoteEntry,
+  shanghaiDay,
+  siblingIds,
   tallyText,
+  wrongLedger,
 } from './index.js';
 
 const choice = (id) => ({ id, name: id, meaning: '', reason: '', correct: id === 'B' });
@@ -57,6 +70,68 @@ test('parseAttempt accepts the stored array and the text column', () => {
   assert.equal(parseAttempt(''), null);
   assert.equal(parseAttempt('right,maybe'), null);
   assert.equal(parseAttempt(null), null);
+});
+
+test('wrong-option ledger counts repeated letters and keeps the bank text', () => {
+  const at = '2026-11-01T01:00:00.000Z';
+  const later = '2026-11-01T02:00:00.000Z';
+  const first = attemptEntries(question, { Q1_0: 'A' }, at);
+  const second = attemptEntries(question, { Q1_0: 'A' }, later);
+  assert.equal(first[0].choice, 'A');
+  assert.equal(first[0].verdict, 'wrong');
+  assert.equal(first[1].choice, null);
+  assert.equal(first[1].verdict, 'open');
+  assert.equal(parseAttemptEntry(first[0]).letter, undefined);
+  assert.equal(parseAttemptEntry(first[0]).choice, 'A');
+  assert.equal(parseAttemptEntry({ questionId: 'Q1', blankIndex: 0, choice: null, verdict: 'nope', at }), null);
+  const rows = wrongLedger(question, [...first, ...second, attemptEntries(question, { Q1_0: 'B' }, later)[0]]);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].count, 2);
+  assert.equal(rows[0].name, 'A');
+  assert.equal(rows[0].meaning, '');
+  assert.match(ledgerLine(rows[0]), /A\u3000A\u30002次/);
+  assert.equal(hasPickedWrong(['wrong', 'open']), true);
+  assert.equal(hasPickedWrong(['skip']), false);
+  assert.equal(hasPickedWrong(['right']), false);
+});
+
+test('sibling drills come from shared option names', () => {
+  const named = (id, names) => ({
+    id,
+    title: id,
+    blanks: [{ label: '本题', answer: names[0], letter: 'A', options: names.map((name) => ({ id: name.slice(0, 1), name, meaning: name, reason: name })) }],
+  });
+  const questions = [named('Q1', ['MVC风格', '管道']), named('Q7', ['管道', 'C2风格']), named('Q3', ['高扩展性'])];
+  assert.deepEqual(siblingIds(questions, 'Q1'), ['Q7']);
+  assert.deepEqual(drillIds(questions, 'Q1'), ['Q1', 'Q7']);
+  assert.deepEqual(drillIds(questions, 'Q3'), []);
+  assert.deepEqual(siblingIds(questions, 'Q9'), []);
+});
+
+test('an earlier note is shown only when the same blank is wrong again', () => {
+  assert.equal(shanghaiDay('2026-10-09T15:59:00.000Z'), '2026-10-09');
+  assert.equal(shanghaiDay('2026-10-09T16:00:00.000Z'), '2026-10-10');
+  assert.equal(notesChanged(['', '', ''], ['一句', '', '']), true);
+  assert.equal(notesChanged(['一句', '', ''], ['一句', '', '']), false);
+  assert.equal(hasNoteText(['  ', '', '']), false);
+  const history = [{ questionId: 'Q1', notes: ['管道把步骤串起来', '', ''], at: '2026-11-01T00:00:00.000Z' }];
+  assert.equal(parseNoteEntry(history[0]).notes[0], '管道把步骤串起来');
+  assert.equal(parseNoteEntry({ questionId: 'Q1', notes: ['仅一段'], at: '2026-11-01T00:00:00.000Z' }), null);
+  const once = attemptEntries(question, { Q1_0: 'A' }, '2026-11-01T01:00:00.000Z');
+  assert.equal(confrontation(question, once, history, 0), null);
+  const twice = [...once, ...attemptEntries(question, { Q1_0: 'A' }, '2026-11-01T03:00:00.000Z')];
+  const face = confrontation(question, twice, history, 0);
+  assert.equal(face.blankIndex, 0);
+  assert.equal(face.day, '2026-11-01');
+  assert.match(face.text, /管道把步骤串起来/);
+  assert.equal(face.letter, 'B');
+  assert.equal(confrontationLine(face), `${face.day} 你写下：${face.text}`);
+  const empty = confrontation(question, twice, [{ questionId: 'Q1', notes: ['  ', '', ''], at: '2026-11-01T00:00:00.000Z' }], 0);
+  assert.equal(empty, null);
+  const after = confrontation(question, twice, [{ questionId: 'Q1', notes: ['事后才写', '', ''], at: '2026-11-01T04:00:00.000Z' }], 0);
+  assert.equal(after, null);
+  const corrected = [...twice, ...attemptEntries(question, { Q1_0: 'B' }, '2026-11-01T05:00:00.000Z')];
+  assert.equal(confrontation(question, corrected, history, 0), null);
 });
 
 test('month load uses the civil date and piles overdue work onto today', () => {

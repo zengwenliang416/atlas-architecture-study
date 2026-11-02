@@ -19,7 +19,7 @@ export class UnknownQuestionError extends Error {
 }
 
 /** node-pg returns timestamptz as `YYYY-MM-DD HH:mm:ss+00`, which Safari will not parse. */
-function asIso(value: string | null): string | null {
+export function asIso(value: string | null): string | null {
   if (value == null) return null;
   const normalized = /^\d{4}-\d{2}-\d{2} /.test(value)
     ? value.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00')

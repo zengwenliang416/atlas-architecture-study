@@ -6,6 +6,11 @@ export type CompareView = {
   tally: { right: number; wrong: number; skip: number; open: number };
 };
 
+export type ExamQueue = {
+  ids: string[];
+  kind: 'paper' | 'siblings';
+};
+
 export type StudyUiState = {
   mode: StudyMode;
   focusId: string;
@@ -19,7 +24,7 @@ export type StudyUiState = {
   activeEssayCase: Record<string, string>;
   sidebarCollapsed: boolean;
   toast: string | null;
-  exam: { ids: string[] } | null;
+  exam: ExamQueue | null;
   compare: CompareView | null;
 };
 
@@ -39,7 +44,7 @@ export type StudyUiAction =
   | { type: 'essay'; id: string; caseKey: string }
   | { type: 'sidebar' }
   | { type: 'sidebar-set'; collapsed: boolean }
-  | { type: 'start'; ids: string[] }
+  | { type: 'start'; ids: string[]; kind?: ExamQueue['kind'] }
   | { type: 'mask-exam' }
   | { type: 'graded'; compare: CompareView }
   | { type: 'jump'; id: string; matches: boolean };
@@ -117,7 +122,7 @@ export function studyUiReducer(state: StudyUiState, action: StudyUiAction): Stud
         keyword: '',
         focusId: action.ids[0] ?? 'Q1',
         mode: 'focus',
-        exam: { ids: action.ids },
+        exam: { ids: action.ids, kind: action.kind ?? 'paper' },
         compare: null,
       };
     case 'jump':

@@ -96,6 +96,205 @@ export function tallyText(tally) {
   return tally.open > 0 ? `${base} · 概念填空 ${tally.open}` : base;
 }
 
+export function hasPickedWrong(attempt) {
+  return Boolean(attempt?.some((item) => item === 'wrong'));
+}
+
+export function notesChanged(previous, next) {
+  if (!Array.isArray(previous) || !Array.isArray(next) || previous.length !== next.length) return false;
+  return previous.some((item, index) => item !== next[index]);
+}
+
+export function hasNoteText(notes) {
+  return Array.isArray(notes) && notes.some((note) => String(note ?? '').trim().length > 0);
+}
+
+/** One append-only row per blank. Skip and open store a null letter. */
+export function attemptEntries(question, selected, at) {
+  return question.blanks.map((blank, index) => {
+    const pick = selected[blankStorageKey(question.id, index)] || '';
+    const verdict = gradeBlank(blank, pick);
+    const choice = verdict === 'right' || verdict === 'wrong' ? pick : null;
+    return { questionId: question.id, blankIndex: index, choice, verdict, at };
+  });
+}
+
+export function parseAttemptEntry(value) {
+  if (!value || typeof value !== 'object') return null;
+  const choice = value.choice;
+  if (choice != null && typeof choice !== 'string') return null;
+  if (typeof value.questionId !== 'string' || !Number.isInteger(value.blankIndex)) return null;
+  if (typeof value.verdict !== 'string' || !VERDICTS.has(value.verdict)) return null;
+  if (typeof value.at !== 'string') return null;
+  return {
+    questionId: value.questionId,
+    blankIndex: value.blankIndex,
+    choice: choice ?? null,
+    verdict: value.verdict,
+    at: value.at,
+  };
+}
+
+export function parseNoteEntry(value) {
+  if (!value || typeof value !== 'object') return null;
+  if (typeof value.questionId !== 'string' || typeof value.at !== 'string') return null;
+  if (!Array.isArray(value.notes) || value.notes.length !== 3) return null;
+  if (value.notes.some((note) => typeof note !== 'string')) return null;
+  return { questionId: value.questionId, notes: value.notes.slice(), at: value.at };
+}
+
+export const LEDGER_TITLE = '错选项';
+
+export function wrongLedger(question, entries) {
+  const counts = new Map();
+  for (const entry of entries) {
+    if (!entry || entry.questionId !== question.id || entry.verdict !== 'wrong' || !entry.choice) continue;
+    const key = `${entry.blankIndex}\u0000${entry.choice}`;
+    const row = counts.get(key) ?? { blankIndex: entry.blankIndex, letter: entry.choice, count: 0 };
+    row.count += 1;
+    counts.set(key, row);
+  }
+  const rows = [];
+  for (const row of counts.values()) {
+    const blank = question.blanks[row.blankIndex];
+    const option = blank?.options?.find((item) => item.id === row.letter);
+    rows.push({
+      blankIndex: row.blankIndex,
+      letter: row.letter,
+      count: row.count,
+      label: blank?.label || `第${row.blankIndex + 1}空`,
+      name: option?.name ?? '',
+      meaning: option?.meaning ?? '',
+      reason: option?.reason ?? '',
+    });
+  }
+  rows.sort((left, right) => {
+    if (left.blankIndex !== right.blankIndex) return left.blankIndex - right.blankIndex;
+    if (left.count !== right.count) return right.count - left.count;
+    if (left.letter < right.letter) return -1;
+    if (left.letter > right.letter) return 1;
+    return 0;
+  });
+  return rows;
+}
+
+export function ledgerLine(row) {
+  return `${row.letter}${GAP}${row.name}${GAP}${row.count}次\n是什么：${row.meaning}\n为什么错：${row.reason}`;
+}
+
+export function optionNames(question) {
+  const names = [];
+  for (const blank of question.blanks) {
+    for (const option of blank.options ?? []) {
+      const name = String(option.name ?? '').trim();
+      if (name && !names.includes(name)) names.push(name);
+    }
+  }
+  return names;
+}
+
+/** Other questions that share at least one option name. The bank is not annotated. */
+export function siblingIds(questions, questionId) {
+  const self = questions.find((question) => question.id === questionId);
+  if (!self) return [];
+  const names = new Set(optionNames(self));
+  if (names.size === 0) return [];
+  const ids = [];
+  for (const question of questions) {
+    if (question.id === questionId) continue;
+    if (optionNames(question).some((name) => names.has(name))) ids.push(question.id);
+  }
+  return ids;
+}
+
+export function drillIds(questions, questionId) {
+  const siblings = siblingIds(questions, questionId);
+  if (siblings.length === 0) return [];
+  return [questionId, ...siblings];
+}
+
+const NOTE_MARKS = ['①', '②', '③'];
+
+export function noteBody(notes) {
+  if (!Array.isArray(notes)) return '';
+  const parts = [];
+  notes.forEach((note, index) => {
+    const text = String(note ?? '').trim();
+    if (text) parts.push(`${NOTE_MARKS[index] ?? ''} ${text}`.trim());
+  });
+  return parts.join(GAP);
+}
+
+/** Asia/Shanghai civil date from an ISO timestamp. Host timezone is not consulted. */
+export function shanghaiDay(iso) {
+  const time = Date.parse(iso);
+  if (Number.isNaN(time)) return '';
+  const shifted = new Date(time + 8 * 60 * 60 * 1000);
+  const year = shifted.getUTCFullYear();
+  const month = String(shifted.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(shifted.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function orderedEntries(entries, questionId) {
+  return entries
+    .map((entry, index) => ({ entry, index }))
+    .filter((item) => item.entry && item.entry.questionId === questionId)
+    .sort((left, right) => {
+      if (left.entry.at < right.entry.at) return -1;
+      if (left.entry.at > right.entry.at) return 1;
+      return left.index - right.index;
+    })
+    .map((item) => item.entry);
+}
+
+export function earlierNote(history, questionId, before) {
+  let found = null;
+  for (const item of history) {
+    if (!item || item.questionId !== questionId || !(item.at < before)) continue;
+    const text = noteBody(item.notes);
+    if (!text) continue;
+    if (!found || item.at > found.at) found = { at: item.at, notes: item.notes, text, day: shanghaiDay(item.at) };
+  }
+  return found;
+}
+
+export function repeatWrongBlanks(entries, questionId) {
+  const counts = new Map();
+  const latest = new Map();
+  for (const entry of orderedEntries(entries, questionId)) {
+    latest.set(entry.blankIndex, entry);
+    if (entry.verdict === 'wrong') counts.set(entry.blankIndex, (counts.get(entry.blankIndex) ?? 0) + 1);
+  }
+  const rows = [];
+  for (const [blankIndex, entry] of latest) {
+    if (entry.verdict === 'wrong' && (counts.get(blankIndex) ?? 0) >= 2) rows.push(entry);
+  }
+  rows.sort((left, right) => left.blankIndex - right.blankIndex);
+  return rows;
+}
+
+export function confrontation(question, entries, history, blankIndex) {
+  const current = repeatWrongBlanks(entries, question.id).find((entry) => entry.blankIndex === blankIndex);
+  if (!current) return null;
+  const note = earlierNote(history, question.id, current.at);
+  if (!note) return null;
+  const blank = question.blanks[blankIndex];
+  if (!blank) return null;
+  const correct = blank.options?.find((option) => option.id === blank.letter) ?? blank.options?.find((option) => option.correct);
+  return {
+    blankIndex,
+    day: note.day,
+    text: note.text,
+    letter: blank.letter,
+    reason: correct?.reason ?? '',
+  };
+}
+
+export function confrontationLine(item) {
+  return `${item.day} 你写下：${item.text}`;
+}
+
 const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日'];
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 

@@ -31,6 +31,8 @@ export const essayCommandSchema = z.object({
   essayDraft: z.string().max(NOTE_LIMIT),
 });
 
+export const attemptChoiceSchema = z.union([z.string().regex(/^[A-Z]$/), z.null()]);
+
 export const attemptsCommandSchema = z.object({
   items: z
     .array(
@@ -38,6 +40,7 @@ export const attemptsCommandSchema = z.object({
         questionId: questionIdSchema,
         version: versionSchema,
         attempt: attemptSchema,
+        choices: z.array(attemptChoiceSchema).min(1).max(16),
       }),
     )
     .min(1)

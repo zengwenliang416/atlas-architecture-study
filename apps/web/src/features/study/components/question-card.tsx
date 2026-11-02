@@ -1,5 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import { answersSummary, blankStatusText, canRevealBlank, choiceClass } from '@atlas/desk';
+import {
+  LEDGER_TITLE,
+  answersSummary,
+  blankStatusText,
+  canRevealBlank,
+  choiceClass,
+  confrontationLine,
+  ledgerLine,
+  type Confrontation,
+  type LedgerRow,
+} from '@atlas/desk';
 import type { Level, Question, StudyRecord } from '@atlas/domain';
 
 const LEVEL_BUTTONS: [Level, string][] = [
@@ -48,6 +58,10 @@ export function QuestionCard({
   onNotes,
   onEssayDraft,
   onCopyEssay,
+  ledger,
+  priorNote,
+  drill,
+  onDrill,
 }: {
   question: Question;
   record: StudyRecord;
@@ -71,6 +85,10 @@ export function QuestionCard({
   onNotes: (notes: [string, string, string], version: number) => Promise<StudyRecord>;
   onEssayDraft: (essayDraft: string, version: number) => Promise<StudyRecord>;
   onCopyEssay: (text: string) => void;
+  ledger: LedgerRow[];
+  priorNote: Confrontation | null;
+  drill: boolean;
+  onDrill: () => void;
 }) {
   const blank = question.blanks[blankIndex] ?? question.blanks[0];
   const [notes, setNotes] = useState<[string, string, string]>(record.notes);
@@ -159,6 +177,7 @@ export function QuestionCard({
         </div>
         <div className="q-actions">
           <button type="button" className="small-btn reveal" aria-expanded={reveal} onClick={onReveal}>{reveal ? '再次遮挡' : '揭晓答案'}</button>
+          {drill ? <button type="button" className="small-btn" data-drill={question.id} onClick={onDrill}>同组辨析</button> : null}
           <button type="button" className="small-btn" onClick={() => document.getElementById(`feynman-${question.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>费曼三问</button>
         </div>
       </div>
@@ -224,6 +243,12 @@ export function QuestionCard({
             答案：{blank.letter || '原题未给字母'} · {blank.answer}
             {reveal && question.blanks.length > 1 ? <div style={{ fontSize: 13, fontWeight: 500, marginTop: 4 }}>全题：{summary}</div> : null}
           </div>
+          {showBlank && ledger.length > 0 ? (
+            <div className="ledger">
+              <h3>{LEDGER_TITLE}</h3>
+              {ledger.map((row) => <p key={`${row.blankIndex}-${row.letter}`}>{ledgerLine(row)}</p>)}
+            </div>
+          ) : null}
           {reveal ? null : <div className="lock">{showBlank ? '讲解仍遮着' : '答案和解析先遮着'}</div>}
         </section>
         <section className="paper">
@@ -260,6 +285,7 @@ export function QuestionCard({
                 <p><strong className="verdict">{option.correct ? '正确' : '不选'}</strong></p>
                 <p><b>是什么：</b>{option.meaning}</p>
                 <p><b>为什么{option.correct ? '对' : '错'}：</b>{option.reason}</p>
+                {option.correct && priorNote ? <p className="margin-rule">{confrontationLine(priorNote)}</p> : null}
               </article>
             ))}
           </div>

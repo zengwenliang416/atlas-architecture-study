@@ -7,7 +7,7 @@
     "dev": "node scripts/dev.mjs",
     "start": "node --env-file=../../.env dist/main.js",
     "pretest": "pnpm --filter @atlas/domain build",
-    "test": "tsc -p tsconfig.test.json && node --env-file=../../.env --test dist-test/study/complete-study.test.js"
+    "test": "tsc -p tsconfig.test.json && node --env-file=../../.env --test dist-test/study/complete-study.test.js dist-test/study/ledger.test.js"
   },
   "dependencies": {
     "@atlas/bank-architecture": "workspace:*",

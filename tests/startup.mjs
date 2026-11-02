@@ -3,6 +3,14 @@ import { readFileSync } from 'node:fs';
 const nodes = new Map();
 const listeners = {};
 const saved = [];
+const store = new Map();
+const RECORD_KEY = 'architecture_review_focused_notes_v2';
+function lastSaved(key = RECORD_KEY) {
+ for (let index = saved.length - 1; index >= 0; index -= 1) {
+  if (saved[index].key === key) return saved[index].value;
+ }
+ return '';
+}
 function node(id) {
  if (!nodes.has(id)) nodes.set(id, {
   innerHTML:'', textContent:'', value:'', style:{}, dataset:{},
@@ -19,7 +27,10 @@ globalThis.document = {
  addEventListener(type, fn){ listeners[type] = fn; },
 };
 globalThis.window = {matchMedia:()=>({matches:false})};
-globalThis.localStorage = {getItem:()=>null,setItem(_key, value){ saved.push(String(value)); }};
+globalThis.localStorage = {
+ getItem(key){ return store.has(key) ? store.get(key) : null; },
+ setItem(key, value){ const text = String(value); store.set(key, text); saved.push({ key, value: text }); },
+};
 await import('../dist/controller.js');
 assert.match(node('questionCards').innerHTML, /处理过程分解的架构风格/);
 assert.match(node('questionCards').innerHTML, /管道-过滤器风格/);
@@ -146,7 +157,7 @@ assert.match(sliceCard('Q9'), /DSSA三阶段及产物/);
 assert.match(sliceCard('Q9'), /class="blanktab active"[^>]*>第3空（有选项）/);
 assert.equal(node('dockCounter').innerHTML, 'Q9 <small>/ 39</small>');
 assert.ok(saved.length > 0);
-assert.doesNotMatch(saved.at(-1), /"revealed"/);
+assert.doesNotMatch(lastSaved(), /"revealed"/);
 node('startBtn').onclick();
 assert.equal(node('submitBtn').hidden, false);
 assert.equal(node('maskBtn').hidden, false);
@@ -165,21 +176,45 @@ assert.match(node('compareSummary').innerHTML, /Q1 本题　选择 A　正确 B 
 assert.match(node('compareSummary').innerHTML, /概念填空/);
 assert.match(node('compareSummary').innerHTML, /compare-summary/);
 assert.match(sliceCard('Q1'), reviewedBefore.includes('已复习：1次') ? /已复习：1次/ : /已复习：0次/);
-const handed = JSON.parse(saved.at(-1));
+const handed = JSON.parse(lastSaved());
 assert.deepEqual(handed.Q1.attempt, ['wrong']);
 assert.deepEqual(handed.Q2.attempt, ['skip']);
 assert.equal(handed.Q22.attempt[0], 'open');
-assert.doesNotMatch(saved.at(-1), /"revealed"/);
+assert.doesNotMatch(lastSaved(), /"revealed"/);
 assert.equal(handed.Q1.count, 1);
 clickButton({ filter: 'wrong' });
 assert.match(node('questionCards').innerHTML, /id="Q1"/);
 assert.match(node('questionCards').innerHTML, /id="Q2"/);
 assert.doesNotMatch(node('questionCards').innerHTML, /id="Q22"/);
 listeners.input({ target: { dataset: { essay: 'Q22' }, value: '先写自己的负载均衡' } });
-assert.equal(JSON.parse(saved.at(-1)).Q22.essay, '先写自己的负载均衡');
+assert.equal(JSON.parse(lastSaved()).Q22.essay, '先写自己的负载均衡');
 assert.match(node('monthLoad').innerHTML, /month-grid/);
 assert.match(node('monthLoad').innerHTML, /is-today/);
 assert.match(node('monthLoad').innerHTML, /data-count="37"/);
+clickButton({ reveal: 'Q1' });
+assert.match(sliceCard('Q1'), /错选项/);
+assert.match(sliceCard('Q1'), /MVC风格\u30001次/);
+assert.match(sliceCard('Q1'), /不是把数据处理任务串成流水线/);
+assert.match(sliceCard('Q1'), /data-drill="Q1"/);
+assert.doesNotMatch(sliceCard('Q2'), /data-drill="Q2"/);
+node('startBtn').onclick();
+press('1');
+node('submitBtn').onclick();
+press('Enter');
+assert.match(sliceCard('Q1'), /MVC风格\u30002次/);
+assert.match(sliceCard('Q1'), /你写下：③ 只留一句：管道串步骤/);
+assert.match(sliceCard('Q1'), /已复习：1次/);
+clickButton({ drill: 'Q1' });
+assert.equal(node('modeLabel').textContent, '同组辨析');
+assert.equal(node('dockCounter').innerHTML, 'Q1 <small>/ 2</small>');
+assert.match(sliceCard('Q1'), /已复习：1次/);
+const log = JSON.parse(lastSaved('architecture_review_attempt_log_v1'));
+assert.equal(log.filter((entry) => entry.questionId === 'Q1' && entry.choice === 'A' && entry.verdict === 'wrong').length, 2);
+const opened = log.find((entry) => entry.questionId === 'Q22' && entry.verdict === 'open');
+assert.equal(opened.choice, null);
+const history = JSON.parse(lastSaved('architecture_review_note_history_v1'));
+assert.equal(history.filter((entry) => entry.questionId === 'Q1').length, 1);
+assert.deepEqual(history[0].notes, ['', '', '只留一句：管道串步骤']);
 const cardSource = readFileSync(new URL('../apps/web/src/features/study/components/question-card.tsx', import.meta.url), 'utf8');
 const pageSource = readFileSync(new URL('../apps/web/src/features/study/study-page.tsx', import.meta.url), 'utf8');
 const reducerSource = readFileSync(new URL('../apps/web/src/features/study/study-reducer.ts', import.meta.url), 'utf8');
@@ -196,6 +231,11 @@ assert.match(pageSource, /揭晓后 c 完成/);
 assert.match(pageSource, /可遮挡再交卷/);
 assert.match(pageSource, /交卷对照/);
 assert.match(pageSource, /错题/);
+assert.match(pageSource, /同组辨析/);
+assert.match(cardSource, /LEDGER_TITLE/);
+assert.match(cardSource, /confrontationLine/);
+assert.match(cardSource, /同组辨析/);
+assert.match(reducerSource, /siblings/);
 assert.match(pageSource, /month-load/);
 assert.match(pageSource, /body: '\{\}'/);
 assert.match(pageSource, /\/attempts\?bankId=/);
@@ -212,12 +252,21 @@ for (const cssPath of ['src/styles.css', 'apps/web/src/styles/app.css', 'dist/st
 const deskSource = readFileSync(new URL('../packages/desk/src/index.js', import.meta.url), 'utf8');
 assert.equal(readFileSync(new URL('../src/desk.js', import.meta.url), 'utf8'), deskSource);
 assert.equal(readFileSync(new URL('../dist/desk.js', import.meta.url), 'utf8'), deskSource);
-const { NOTE_LIMIT, hasWrongBlank: domainWrong, parseAttempt: domainParse } = await import('../packages/domain/dist-test/index.js');
-const { ESSAY_LIMIT, hasWrongBlank, parseAttempt } = await import('../packages/desk/src/index.js');
+const { NOTE_LIMIT, hasNoteText: domainNote, hasWrongBlank: domainWrong, notesChanged: domainChanged, parseAttempt: domainParse, shanghaiDate } = await import('../packages/domain/dist-test/index.js');
+const { ESSAY_LIMIT, hasNoteText, hasWrongBlank, notesChanged, parseAttempt, shanghaiDay, siblingIds } = await import('../packages/desk/src/index.js');
 assert.equal(ESSAY_LIMIT, NOTE_LIMIT);
 for (const value of [null, '', 'right', 'right,wrong', 'right,open', 'nope', ['open'], ['skip', 'right'], 'open,skip']) {
   assert.deepEqual(parseAttempt(value), domainParse(value), JSON.stringify(value));
   const parsed = parseAttempt(value);
   assert.equal(hasWrongBlank(parsed), domainWrong(parsed));
 }
+for (const pair of [[['','',''], ['一句','','']], [['一句','',''], ['一句','','']], [['  ','',''], ['','',' ']]]) {
+  assert.equal(notesChanged(pair[0], pair[1]), domainChanged(pair[0], pair[1]));
+  assert.equal(hasNoteText(pair[0]), domainNote(pair[0]));
+}
+assert.equal(shanghaiDay('2026-10-09T16:00:00.000Z'), shanghaiDate(new Date('2026-10-09T16:00:00.000Z')));
+for (const [left, right] of [['Q1','Q7'],['Q2','Q4'],['Q10','Q13'],['Q30','Q31'],['Q36','Q37']]) {
+  assert.ok(siblingIds(DATA, left).includes(right), `${left} ${right}`);
+}
+assert.equal(siblingIds(DATA, 'Q1').length, 1);
 console.log('Desk passed: Feynman gate, blank keys, per-blank reveal, submit, wrong filter, draft, month.');
