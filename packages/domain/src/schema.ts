@@ -8,7 +8,7 @@ export const notesSchema = z.tuple([
   z.string().max(NOTE_LIMIT),
 ]);
 export const versionSchema = z.number().int().nonnegative();
-export const questionIdSchema = z.string().regex(/^Q\d+$/);
+export const questionIdSchema = z.string().regex(/^(?:Q|H)\d+$/);
 
 export const notesCommandSchema = z.object({
   version: versionSchema,
@@ -31,7 +31,7 @@ export const essayCommandSchema = z.object({
   essayDraft: z.string().max(NOTE_LIMIT),
 });
 
-export const attemptChoiceSchema = z.union([z.string().regex(/^[A-Z]$/), z.null()]);
+export const attemptChoiceSchema = z.union([z.string().regex(/^[A-Z](?:、[A-Z])*$/), z.null()]);
 
 export const attemptsCommandSchema = z.object({
   items: z
@@ -44,7 +44,7 @@ export const attemptsCommandSchema = z.object({
       }),
     )
     .min(1)
-    .max(64),
+    .max(320),
 });
 
 export const setupCommandSchema = z.object({

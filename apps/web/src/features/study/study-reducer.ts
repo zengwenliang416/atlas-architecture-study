@@ -39,7 +39,8 @@ export type StudyUiAction =
   | { type: 'expand-all' }
   | { type: 'mask-all' }
   | { type: 'blank'; id: string; index: number }
-  | { type: 'pick'; key: string; choice: string }
+  | { type: 'pick'; key: string; choice: string; multi?: boolean; order?: string[] }
+  | { type: 'switch-bank'; focusId: string; activeBlanks: Record<string, number> }
   | { type: 'node'; id: string; index: number }
   | { type: 'essay'; id: string; caseKey: string }
   | { type: 'sidebar' }
@@ -97,8 +98,21 @@ export function studyUiReducer(state: StudyUiState, action: StudyUiAction): Stud
       return { ...state, revealed: [], revealedBlanks: [], mode: 'stems', filter: 'all', keyword: '' };
     case 'blank':
       return { ...state, activeBlanks: { ...state.activeBlanks, [action.id]: action.index } };
-    case 'pick':
-      return { ...state, selected: { ...state.selected, [action.key]: action.choice } };
+    case 'pick': {
+      if (!action.multi) return { ...state, selected: { ...state.selected, [action.key]: action.choice } };
+      const have = new Set((state.selected[action.key] ?? '').split('、').filter(Boolean));
+      if (have.has(action.choice)) have.delete(action.choice);
+      else have.add(action.choice);
+      const order = action.order ?? [...have].sort();
+      return { ...state, selected: { ...state.selected, [action.key]: order.filter((id) => have.has(id)).join('、') } };
+    }
+    case 'switch-bank':
+      return {
+        ...initialStudyUi,
+        focusId: action.focusId,
+        activeBlanks: action.activeBlanks,
+        sidebarCollapsed: state.sidebarCollapsed,
+      };
     case 'node':
       return { ...state, nodeFocus: { ...state.nodeFocus, [action.id]: action.index } };
     case 'essay':

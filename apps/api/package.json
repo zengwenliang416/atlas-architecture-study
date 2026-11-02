@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@atlas/bank-architecture": "workspace:*",
+    "@atlas/bank-hcip": "workspace:*",
     "@atlas/domain": "workspace:*",
     "@better-auth/drizzle-adapter": "1.7.7",
     "@better-auth/utils": "0.4.2",

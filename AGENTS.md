@@ -26,7 +26,7 @@ python3 scripts/verify_maintenance.py
 
 ## 硬约束
 
-- 题面以 `@atlas/bank-architecture` 为准，应用不改写原题。见 [题库](docs/subsystems/bank.md)。
+- 题面以各题库包为准，应用不改写原题。见 [题库](docs/subsystems/bank.md)。
 - 掌握等级、复习间隔和笔记长度只由 `@atlas/domain` 计算。见 [复习规则](docs/subsystems/domain.md)。
 - 密钥放在环境变量。`.env` 不入库。见 [本地运行](docs/cookbook/dev.md)。
 - 首个账号创建成功后关闭公开注册。见 [API](docs/subsystems/api.md)。
@@ -39,7 +39,8 @@ apps/web/                      React 复习界面
 apps/api/                      NestJS API、会话和 PostgreSQL
 packages/domain/               复习规则
 packages/desk/                 题卡纯函数
-packages/bank-architecture/    题面
+packages/bank-architecture/    系统架构设计师题面
+packages/bank-hcip/             HCIP AI 题面
 src/                           静态站点
 docs/                          当前行为：架构、子系统、操作、事故
 .agents/notes/                 决定和被放弃的方案

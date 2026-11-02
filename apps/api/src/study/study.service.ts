@@ -6,7 +6,6 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { BANK_ID, DATA } from '@atlas/bank-architecture';
 import {
   attemptChoices,
   emptyRecord,
@@ -22,11 +21,10 @@ import {
   type StudyRecord,
 } from '@atlas/domain';
 import { and, asc, eq, lte, sql } from 'drizzle-orm';
+import { bankQuestionIds, bankQuestions } from '../banks/catalog.js';
 import { DATABASE, type Database } from '../db/db.module.js';
 import { attemptLog, noteHistory, studyRecord, type AttemptLogRow, type NoteHistoryRow } from '../db/study-schema.js';
 import { asIso, completeStudy, StudyConflictError, toStudyRecord, UnknownQuestionError } from './complete-study.js';
-
-const questionIds = new Set(DATA.map((question) => question.id));
 
 type StudyFollowUp = {
   notes?: [string, string, string];
@@ -61,19 +59,27 @@ function isPgError(error: unknown): error is { code: string } {
 export class StudyService {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
-  private assertBank(bankId: string): void {
-    if (bankId !== BANK_ID) throw new NotFoundException('题库不存在');
+  private questions(bankId: string) {
+    const questions = bankQuestions(bankId);
+    if (!questions) throw new NotFoundException('题库不存在');
+    return questions;
+  }
+
+  private assertQuestion(bankId: string, questionId: string): void {
+    const ids = bankQuestionIds(bankId);
+    if (!ids) throw new NotFoundException('题库不存在');
+    if (!ids.has(questionId)) throw new NotFoundException(`题库中没有 ${questionId}`);
   }
 
   async list(userId: string, bankId: string) {
-    this.assertBank(bankId);
+    const questions = this.questions(bankId);
     const today = shanghaiDate();
     const rows = await this.db
       .select()
       .from(studyRecord)
       .where(and(eq(studyRecord.userId, userId), eq(studyRecord.bankId, bankId)));
     const byId = new Map(rows.map((row) => [row.questionId, toStudyRecord(row)]));
-    const records = DATA.map((question) => byId.get(question.id) ?? emptyRecord(question.id, today));
+    const records = questions.map((question) => byId.get(question.id) ?? emptyRecord(question.id, today));
     const owned = and(eq(attemptLog.userId, userId), eq(attemptLog.bankId, bankId));
     const logRows = await this.db
       .select()
@@ -102,7 +108,7 @@ export class StudyService {
   }
 
   async due(userId: string, bankId: string) {
-    this.assertBank(bankId);
+    this.questions(bankId);
     const today = shanghaiDate();
     const rows = await this.db
       .select({ questionId: studyRecord.questionId })
@@ -132,16 +138,16 @@ export class StudyService {
           lte(studyRecord.nextReviewOn, today),
         ),
       );
+    const questions = this.questions(bankId);
     const due = new Set(persisted.map((row) => row.questionId));
-    for (const question of DATA) {
+    for (const question of questions) {
       if (!knownIds.has(question.id)) due.add(question.id);
     }
-    return DATA.filter((question) => due.has(question.id)).map((question) => question.id);
+    return questions.filter((question) => due.has(question.id)).map((question) => question.id);
   }
 
   async saveNotes(userId: string, bankId: string, questionId: string, version: number, notes: [string, string, string]) {
-    this.assertBank(bankId);
-    this.assertQuestion(questionId);
+    this.assertQuestion(bankId, questionId);
     const today = shanghaiDate();
     const [existing] = await this.db
       .select({ note0: studyRecord.note0, note1: studyRecord.note1, note2: studyRecord.note2 })
@@ -169,8 +175,7 @@ export class StudyService {
   }
 
   async saveEssay(userId: string, bankId: string, questionId: string, version: number, essayDraft: string) {
-    this.assertBank(bankId);
-    this.assertQuestion(questionId);
+    this.assertQuestion(bankId, questionId);
     const today = shanghaiDate();
     const checked = replaceEssay(emptyRecord(questionId, today), essayDraft);
     if (!checked.ok) throw new BadRequestException({ code: checked.error.code, detail: checked.error.message });
@@ -185,15 +190,15 @@ export class StudyService {
     bankId: string,
     items: { questionId: string; version: number; attempt: BlankVerdict[]; choices: (string | null)[] }[],
   ) {
-    this.assertBank(bankId);
+    this.questions(bankId);
     const today = shanghaiDate();
     const records: StudyRecord[] = [];
     const written: { questionId: string; blankIndex: number; choice: string | null; verdict: BlankVerdict; at: string }[] = [];
     for (const item of items) {
-      this.assertQuestion(item.questionId);
+      this.assertQuestion(bankId, item.questionId);
       const paired = attemptChoices(item.attempt, item.choices);
       if (!paired.ok) throw new BadRequestException({ code: paired.error.code, detail: paired.error.message });
-      const question = DATA.find((entry) => entry.id === item.questionId);
+      const question = this.questions(bankId).find((entry) => entry.id === item.questionId);
       if (!question || question.blanks.length !== paired.value.attempt.length) {
         throw new BadRequestException({ code: 'invalid_attempt', detail: '交卷结果无效' });
       }
@@ -233,8 +238,7 @@ export class StudyService {
   }
 
   async saveLevel(userId: string, bankId: string, questionId: string, version: number, level: string) {
-    this.assertBank(bankId);
-    this.assertQuestion(questionId);
+    this.assertQuestion(bankId, questionId);
     const today = shanghaiDate();
     const nowIso = new Date().toISOString();
     const checked = markLevel(emptyRecord(questionId, today), level, nowIso);
@@ -247,14 +251,15 @@ export class StudyService {
   }
 
   async complete(userId: string, bankId: string, questionId: string) {
-    this.assertBank(bankId);
+    const known = bankQuestionIds(bankId)?.has(questionId) ?? false;
+    if (!bankQuestions(bankId)) throw new NotFoundException('题库不存在');
     const now = new Date();
     try {
       return await completeStudy(this.db, {
         userId,
         bankId,
         questionId,
-        known: questionIds.has(questionId),
+        known,
         today: shanghaiDate(now),
         nowIso: now.toISOString(),
       });
@@ -264,14 +269,15 @@ export class StudyService {
   }
 
   async importSnapshot(userId: string, bankId: string, records: Record<string, unknown>) {
-    this.assertBank(bankId);
+    const ids = bankQuestionIds(bankId);
+    if (!ids) throw new NotFoundException('题库不存在');
     const today = shanghaiDate();
     const nowIso = new Date().toISOString();
     let imported = 0;
     let ignored = 0;
     await this.db.transaction(async (tx) => {
       for (const [questionId, raw] of Object.entries(records)) {
-        if (!questionIds.has(questionId)) {
+        if (!ids.has(questionId)) {
           ignored += 1;
           continue;
         }
@@ -317,10 +323,6 @@ export class StudyService {
       }
     });
     return { imported, ignored };
-  }
-
-  private assertQuestion(questionId: string): void {
-    if (!questionIds.has(questionId)) throw new NotFoundException(`题库中没有 ${questionId}`);
   }
 
   private async writeFields(

@@ -70,10 +70,12 @@ button:disabled { cursor: default; transform: none; }
 }
 .mast-brand, .brandline {
   display: flex;
-  align-items: baseline;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
   grid-column: 1;
 }
+.bankrow { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .brandmark {
   font-family: var(--serif);
   font-size: 16px;

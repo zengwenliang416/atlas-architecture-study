@@ -8,7 +8,7 @@ Status: implemented
 
 ## Decision
 
-`attempt_log` 只追加。每次交卷按空写一行：用户、题库、题目、空号、选项字母或空值、对错、时刻。`study_record.attempt` 仍是该题最新逐空结果，错题筛选继续读它。交卷不调用完成复习。
+`attempt_log` 只追加。每次交卷按空写一行：用户、题库、题目、空号、选项字母或空值、对错、时刻。多选把选中的字母用顿号连成这一个选择。`study_record.attempt` 仍是该题最新逐空结果，错题筛选继续读它。交卷不调用完成复习。
 
 错选项按题汇总在 `packages/desk`：同一个空、同一个错字母计次数，并带上题库里该选项的名称、「是什么」和「为什么错」。未揭晓的空不显示这段，避免在遮挡时漏出解释。静态页把同一形状的流水放在 `localStorage` 键 `architecture_review_attempt_log_v1`。
 

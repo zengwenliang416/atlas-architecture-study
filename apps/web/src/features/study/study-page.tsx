@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { BANK_ID, DATA } from '@atlas/bank-architecture';
 import {
   SCHEDULE_PREVIEW,
   answersSummary,
@@ -12,6 +11,7 @@ import {
   confrontation,
   drillIds,
   hasPickedWrong,
+  isMultiAnswer,
   monthLoad,
   siblingIds,
   tallyRows,
@@ -34,6 +34,7 @@ import {
 import { ApiError, api, signOut } from '../../shared/api/client';
 import { queryKeys } from '../../shared/api/query-keys';
 import { Toast } from '../../shared/ui/toast';
+import { STUDY_BANKS, studyBank } from './banks';
 import { QuestionCard } from './components/question-card';
 import { initialStudyUi, studyUiReducer, type LevelFilter } from './study-reducer';
 
@@ -119,17 +120,19 @@ function TocList({
 
 export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: () => void }) {
   const queryClient = useQueryClient();
+  const [bankId, setBankId] = useState(STUDY_BANKS[0].id);
+  const bank = studyBank(bankId);
   const [ui, dispatch] = useReducer(studyUiReducer, initialStudyUi);
   const recordsQuery = useQuery({
-    queryKey: queryKeys.records,
-    queryFn: () => api<RecordsResponse>(`/api/study/records?bankId=${BANK_ID}`),
+    queryKey: queryKeys.records(bankId),
+    queryFn: () => api<RecordsResponse>(`/api/study/records?bankId=${bankId}`),
   });
   const bankQuery = useQuery({
-    queryKey: queryKeys.bank,
-    queryFn: () => api<BankResponse>('/api/banks/architecture'),
+    queryKey: queryKeys.bank(bankId),
+    queryFn: () => api<BankResponse>(`/api/banks/${bankId}`),
   });
   const today = recordsQuery.data?.today ?? '';
-  const questions = bankQuery.data?.questions ?? DATA;
+  const questions = bankQuery.data?.questions ?? bank.questions;
   const recordById = useMemo(() => {
     const map = new Map<string, StudyRecord>();
     for (const record of recordsQuery.data?.records ?? []) map.set(record.questionId, record);
@@ -186,9 +189,15 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
         const question = questions.find((item) => item.id === focusId);
         const blank = question?.blanks[(ui.activeBlanks[question.id] ?? 0)] ?? question?.blanks[0];
         const option = blank?.options[Number(event.key) - 1];
-        if (question && option) {
+        if (question && blank && option) {
           event.preventDefault();
-          dispatch({ type: 'pick', key: blankStorageKey(question.id, ui.activeBlanks[question.id] ?? 0), choice: option.id });
+          dispatch({
+            type: 'pick',
+            key: blankStorageKey(question.id, ui.activeBlanks[question.id] ?? 0),
+            choice: option.id,
+            multi: isMultiAnswer(blank.letter),
+            order: blank.options.map((item) => item.id),
+          });
         }
       } else if (event.key === 'Enter') {
         event.preventDefault();
@@ -215,7 +224,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
   }
 
   function replaceRecord(next: StudyRecord) {
-    queryClient.setQueryData<RecordsResponse>(queryKeys.records, (current) => {
+    queryClient.setQueryData<RecordsResponse>(queryKeys.records(bankId), (current) => {
       if (!current) return current;
       const records = current.records.some((record) => record.questionId === next.questionId)
         ? current.records.map((record) => (record.questionId === next.questionId ? next : record))
@@ -226,7 +235,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
 
   function onConflict(error: unknown) {
     if (error instanceof ApiError && error.status === 409) {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.records });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.records(bankId) });
       toast('学习记录已被其他保存更新，已重新加载');
       return;
     }
@@ -235,7 +244,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
 
   const levelMutation = useMutation({
     mutationFn: (input: { questionId: string; level: Level; version: number }) =>
-      api<StudyRecord>(`/api/study/records/${input.questionId}/level?bankId=${BANK_ID}`, {
+      api<StudyRecord>(`/api/study/records/${input.questionId}/level?bankId=${bankId}`, {
         method: 'POST',
         body: JSON.stringify({ version: input.version, level: input.level }),
       }),
@@ -247,7 +256,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
   });
   const completeMutation = useMutation({
     mutationFn: (questionId: string) =>
-      api<{ record: StudyRecord; idempotent: boolean }>(`/api/study/records/${questionId}/complete?bankId=${BANK_ID}`, {
+      api<{ record: StudyRecord; idempotent: boolean }>(`/api/study/records/${questionId}/complete?bankId=${bankId}`, {
         method: 'POST',
         body: '{}',
       }),
@@ -259,12 +268,12 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
   });
   const importMutation = useMutation({
     mutationFn: (records: Record<string, unknown>) =>
-      api<{ imported: number; ignored: number }>(`/api/study/import?bankId=${BANK_ID}`, {
+      api<{ imported: number; ignored: number }>(`/api/study/import?bankId=${bankId}`, {
         method: 'POST',
         body: JSON.stringify({ records }),
       }),
     onSuccess: async (result) => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.records });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.records(bankId) });
       toast(`已导入 ${result.imported} 题，忽略 ${result.ignored} 条`);
     },
     onError: onConflict,
@@ -272,7 +281,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
 
   async function saveEssay(questionId: string, essayDraft: string, version: number) {
     try {
-      const record = await api<StudyRecord>(`/api/study/records/${questionId}/essay?bankId=${BANK_ID}`, {
+      const record = await api<StudyRecord>(`/api/study/records/${questionId}/essay?bankId=${bankId}`, {
         method: 'PATCH',
         body: JSON.stringify({ version, essayDraft }),
       });
@@ -294,7 +303,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
     dispatch({ type: 'graded', compare: { lines: rows.map(compareLine), tally } });
     try {
       const stamped = new Date().toISOString();
-      const result = await api<{ records: StudyRecord[]; attemptLog: AttemptEntry[] }>(`/api/study/attempts?bankId=${BANK_ID}`, {
+      const result = await api<{ records: StudyRecord[]; attemptLog: AttemptEntry[] }>(`/api/study/attempts?bankId=${bankId}`, {
         method: 'POST',
         body: JSON.stringify({
           items: queued.map((question) => ({
@@ -305,7 +314,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
           })),
         }),
       });
-      queryClient.setQueryData<RecordsResponse>(queryKeys.records, (current) => {
+      queryClient.setQueryData<RecordsResponse>(queryKeys.records(bankId), (current) => {
         if (!current) return current;
         const incoming = new Map(result.records.map((record) => [record.questionId, record]));
         const records = current.records.map((record) => incoming.get(record.questionId) ?? record);
@@ -323,14 +332,14 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
   async function saveNotes(questionId: string, notes: [string, string, string], version: number) {
     const previous = recordById.get(questionId)?.notes ?? (['', '', ''] as [string, string, string]);
     try {
-      const record = await api<StudyRecord>(`/api/study/records/${questionId}/notes?bankId=${BANK_ID}`, {
+      const record = await api<StudyRecord>(`/api/study/records/${questionId}/notes?bankId=${bankId}`, {
         method: 'PATCH',
         body: JSON.stringify({ version, notes }),
       });
       replaceRecord(record);
       if (notesChanged(previous, notes) && hasNoteText(notes)) {
         const entry: NoteEntry = { questionId, notes, at: new Date().toISOString() };
-        queryClient.setQueryData<RecordsResponse>(queryKeys.records, (current) => (
+        queryClient.setQueryData<RecordsResponse>(queryKeys.records(bankId), (current) => (
           current ? { ...current, noteHistory: [...(current.noteHistory ?? []), entry] } : current
         ));
       }
@@ -357,7 +366,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
   }
 
   function exportNotes(): string {
-    const lines = ['系统架构设计师 · 对话题库费曼笔记', `导出日期：${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`, `题目总数：${questions.length}`, '======================='];
+    const lines = [bank.id === 'architecture' ? '系统架构设计师 · 对话题库费曼笔记' : `${bank.name} · 费曼笔记`, `导出日期：${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`, `题目总数：${questions.length}`, '======================='];
     for (const question of questions) {
       const record = recordOf(question);
       lines.push(
@@ -391,10 +400,32 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
   return (
     <div className="app" id="top">
       <header className="masthead" aria-label="复习工作台" data-specnav-shell-part="header">
-        <div className="mast-brand"><span className="brandmark">a.</span><span className="brandname">Atlas</span><span className="brand-cn">系统架构设计师</span></div>
+        <div className="mast-brand">
+          <span className="brandmark">a.</span>
+          <span className="brandname">Atlas</span>
+          <span className="bankrow">
+            {STUDY_BANKS.map((item) => (
+              <button
+                type="button"
+                key={item.id}
+                className={`filterchip ${item.id === bankId ? 'active' : ''}`}
+                aria-pressed={item.id === bankId}
+                onClick={() => {
+                  if (item.id === bankId) return;
+                  setBankId(item.id);
+                  dispatch({
+                    type: 'switch-bank',
+                    focusId: item.questions[0]?.id ?? 'Q1',
+                    activeBlanks: item.id === 'architecture' ? { Q9: 2 } : {},
+                  });
+                }}
+              >{item.name}</button>
+            ))}
+          </span>
+        </div>
         <div className="mast-copy">
           <h1>对话题库复习</h1>
-          <p>先答再揭晓，四区讲解、费曼笔记，按间隔回来</p>
+          <p>{bank.lead}</p>
         </div>
         <div className="mast-side">
           <div className="mast-actions">
@@ -476,7 +507,16 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
                   onReveal={() => dispatch({ type: 'toggle-reveal', id: question.id })}
                   onRevealBlank={() => dispatch({ type: 'toggle-blank-reveal', id: question.id, index: blankIndex })}
                   onBlank={(index) => dispatch({ type: 'blank', id: question.id, index })}
-                  onPick={(choice) => dispatch({ type: 'pick', key: blankStorageKey(question.id, blankIndex), choice })}
+                  onPick={(choice) => {
+                    const blank = question.blanks[blankIndex] ?? question.blanks[0];
+                    dispatch({
+                      type: 'pick',
+                      key: blankStorageKey(question.id, blankIndex),
+                      choice,
+                      multi: isMultiAnswer(blank?.letter ?? ''),
+                      order: blank?.options.map((option) => option.id),
+                    });
+                  }}
                   onNode={(index) => dispatch({ type: 'node', id: question.id, index })}
                   onEssayCase={(caseKey) => dispatch({ type: 'essay', id: question.id, caseKey })}
                   onLevel={(level) => levelMutation.mutate({ questionId: question.id, level, version: record.version })}
