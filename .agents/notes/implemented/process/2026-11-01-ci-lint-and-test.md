@@ -20,4 +20,6 @@ Status: implemented
 
 ## Consequences
 
-`pnpm lint` 或 `pnpm test` 失败时，工作流为红，文档门禁也在同一工作流里。锁文件与 `package.json` 不一致时，`pnpm install --frozen-lockfile` 失败。`pnpm test:api` 仍要求本机数据库。这条门禁只调用已有脚本。`docs/cookbook/test.md` 的字数上限是 149，这页要写清两条作业跑哪些命令，并留下 5% 余量。合并按钮要拒绝失败的检查，需要 `main` 把作业 `maintenance` 和 `lint and test` 列为必需状态检查；工作流文件写不了这项仓库设置。操作说明在 [测试](../../../../docs/cookbook/test.md)。文档与笔记的分工见 [事实、规则和取舍分开存放](2026-11-01-docs-and-notes-split.md)。
+`pnpm lint` 或 `pnpm test` 失败时，工作流为红，文档门禁也在同一工作流里。锁文件与 `package.json` 不一致时，`pnpm install --frozen-lockfile` 失败。`pnpm test:api` 仍要求本机数据库。这条门禁只调用已有脚本。`docs/cookbook/test.md` 的字数上限是 180，这页要写清两条作业跑哪些命令，并留下 5% 余量。合并按钮要拒绝失败的检查，需要 `main` 把作业 `maintenance` 和 `lint and test` 列为必需状态检查；工作流文件写不了这项仓库设置。操作说明在 [测试](../../../../docs/cookbook/test.md)。文档与笔记的分工见 [事实、规则和取舍分开存放](2026-11-01-docs-and-notes-split.md)。
+
+生产发布不在这条工作流里，见 [main 推送后发布到这台服务器](2026-11-02-main-woodpecker-deploy.md)。

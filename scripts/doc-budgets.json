@@ -2,7 +2,7 @@
   "files": {
     ".agents/notes/README.md": 920,
     ".agents/notes/implemented/AGENTS.md": 140,
-    "AGENTS.md": 583,
+    "AGENTS.md": 640,
     "CLAUDE.md": 37,
     "apps/api/AGENTS.md": 69,
     "apps/web/AGENTS.md": 68,
@@ -10,7 +10,8 @@
     "docs/architecture.md": 252,
     "docs/cookbook/README.md": 42,
     "docs/cookbook/dev.md": 130,
-    "docs/cookbook/test.md": 152,
+    "docs/cookbook/deploy.md": 170,
+    "docs/cookbook/test.md": 180,
     "docs/postmortem/README.md": 53,
     "docs/subsystems/README.md": 58,
     "docs/subsystems/api.md": 168,

@@ -4,3 +4,4 @@
 
 - [本地运行](dev.md)
 - [测试](test.md)
+- [发布](deploy.md)

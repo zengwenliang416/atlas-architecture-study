@@ -1,0 +1,38 @@
+when:
+  - event: [push, manual]
+    branch: main
+
+labels:
+  location: production-80
+  repo: zengwenliang416/atlas-architecture-study
+
+concurrency:
+  limit: 1
+  group: atlas-production-80
+
+steps:
+  - name: verify
+    image: node:24-bookworm
+    environment:
+      CI: "true"
+      NPM_CONFIG_UPDATE_NOTIFIER: "false"
+    commands:
+      - apt-get update
+      - apt-get install -y --no-install-recommends ca-certificates python3
+      - corepack enable
+      - corepack prepare pnpm@10.20.0 --activate
+      - pnpm install --frozen-lockfile
+      - pnpm lint
+      - pnpm test
+      - python3 scripts/verify_maintenance.py
+      - bash -n scripts/deploy/apply.sh
+      - sh -n scripts/deploy/ci-deploy.sh
+
+  - name: deploy
+    image: docker:29-cli
+    depends_on: [verify]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/atlas:/opt/atlas
+    commands:
+      - sh scripts/deploy/ci-deploy.sh
