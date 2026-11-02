@@ -8,6 +8,7 @@ import {
   compareRows,
   gradeBlank,
   hasWrongBlank,
+  isMultiAnswer,
   monthLoad,
   parseAttempt,
   tallyText,
@@ -49,6 +50,26 @@ test('交卷 grades selections and leaves concept blanks open', () => {
   assert.equal(hasWrongBlank(['right']), false);
   assert.equal(hasWrongBlank(null), false);
   assert.equal(tallyText({ right: 0, wrong: 1, skip: 0, open: 1 }), '对 0 · 错 1 · 未答 0 · 概念填空 1');
+});
+
+test('多选整组一致才算对，少选和错选都记错', () => {
+  const multi = {
+    label: '本题',
+    answer: '甲、丙',
+    letter: 'A、C',
+    options: ['A', 'B', 'C', 'D'].map((id) => ({ id, correct: id === 'A' || id === 'C' })),
+  };
+  assert.equal(isMultiAnswer('A、C'), true);
+  assert.equal(isMultiAnswer('B'), false);
+  assert.equal(gradeBlank(multi, 'A、C'), 'right');
+  assert.equal(gradeBlank(multi, 'C、A'), 'right');
+  assert.equal(gradeBlank(multi, 'A'), 'wrong');
+  assert.equal(gradeBlank(multi, 'A、B、C'), 'wrong');
+  assert.equal(gradeBlank(multi, 'A、B'), 'wrong');
+  assert.equal(gradeBlank(multi, undefined), 'skip');
+  assert.equal(blankStatusText({ optionCount: 4, selected: 'A、B', letter: 'A、C', open: true }), '你选择了 A、B，本空应选 A、C');
+  assert.equal(blankStatusText({ optionCount: 4, selected: 'A、C', letter: 'A、C', open: true }), '回答正确');
+  assert.equal(blankStatusText({ optionCount: 4, letter: 'A、C', open: false }), '先选择选项，再揭晓');
 });
 
 test('parseAttempt accepts the stored array and the text column', () => {

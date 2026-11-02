@@ -6,8 +6,23 @@ import { hasWrongBlank, isDue, matchesQuestion } from './filter.js';
 import { normalizeLegacy } from './normalize.js';
 import type { Question } from './question.js';
 import { completeReview, emptyRecord, markLevel, parseAttempt, replaceAttempt, replaceEssay, replaceNotes } from './review-policy.js';
+import { attemptsCommandSchema, questionIdSchema } from './schema.js';
 
 const today = '2026-10-12';
+
+test('question ids cover both banks and a full paper can be submitted', () => {
+  assert.equal(questionIdSchema.safeParse('Q1').success, true);
+  assert.equal(questionIdSchema.safeParse('H305').success, true);
+  assert.equal(questionIdSchema.safeParse('L305').success, false);
+  assert.equal(questionIdSchema.safeParse('X1').success, false);
+  const items = Array.from({ length: 305 }, (_, index) => ({
+    questionId: `H${index + 1}`,
+    version: 0,
+    attempt: ['right'] as const,
+  }));
+  assert.equal(attemptsCommandSchema.safeParse({ items }).success, true);
+  assert.equal(attemptsCommandSchema.safeParse({ items: items.slice(0, 39).map((item) => ({ ...item, questionId: 'Q1' })) }).success, true);
+});
 
 test('plusDays crosses the sample date and month boundaries without host timezone', () => {
   assert.equal(plusDays('2026-10-09', 1), '2026-10-10');

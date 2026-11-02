@@ -30,11 +30,29 @@ export function canRevealBlank(optionCount, selected, open) {
   return optionCount === 0 || Boolean(selected) || Boolean(open);
 }
 
+export function isMultiAnswer(letter) {
+  return typeof letter === 'string' && /[、,，]/.test(letter);
+}
+
+function sameLetterSet(selected, letter) {
+  const split = (value) => String(value).split(/[、,，]/).map((part) => part.trim()).filter(Boolean);
+  const got = split(selected);
+  const want = split(letter);
+  if (got.length !== want.length) return false;
+  const have = new Set(want);
+  return got.every((item) => have.has(item));
+}
+
 export function blankStatusText(input) {
   if (input.optionCount === 0) return '';
-  if (!input.open) return input.selected ? `你选择了 ${input.selected}，答案仍遮着` : '先选择一个选项，再揭晓';
+  const multi = isMultiAnswer(input.letter);
+  if (!input.open) {
+    if (input.selected) return `你选择了 ${input.selected}，答案仍遮着`;
+    return multi ? '先选择选项，再揭晓' : '先选择一个选项，再揭晓';
+  }
   if (!input.selected) return '答案已揭晓';
-  if (input.selected === input.letter) return '回答正确';
+  const right = multi ? sameLetterSet(input.selected, input.letter) : input.selected === input.letter;
+  if (right) return '回答正确';
   return `你选择了 ${input.selected}，本空应选 ${input.letter || '概念填空'}`;
 }
 
@@ -51,6 +69,7 @@ export function answersSummary(question) {
 export function gradeBlank(blank, selected) {
   if (!blank.options.length) return 'open';
   if (!selected) return 'skip';
+  if (isMultiAnswer(blank.letter)) return sameLetterSet(selected, blank.letter) ? 'right' : 'wrong';
   return selected === blank.letter ? 'right' : 'wrong';
 }
 

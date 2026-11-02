@@ -8,7 +8,7 @@ export const notesSchema = z.tuple([
   z.string().max(NOTE_LIMIT),
 ]);
 export const versionSchema = z.number().int().nonnegative();
-export const questionIdSchema = z.string().regex(/^Q\d+$/);
+export const questionIdSchema = z.string().regex(/^(?:Q|H)\d+$/);
 
 export const notesCommandSchema = z.object({
   version: versionSchema,
@@ -41,7 +41,7 @@ export const attemptsCommandSchema = z.object({
       }),
     )
     .min(1)
-    .max(64),
+    .max(320),
 });
 
 export const setupCommandSchema = z.object({

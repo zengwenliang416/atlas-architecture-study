@@ -1,22 +1,23 @@
-import { createHash } from 'node:crypto';
-import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common';
-import { BANK_ID, DATA } from '@atlas/bank-architecture';
+import { Controller, Get, Param, Req, Res, UseGuards } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { SessionGuard } from '../auth/session.guard.js';
-
-const body = JSON.stringify({ bankId: BANK_ID, questions: DATA });
-const etag = `"${createHash('sha256').update(body).digest('hex')}"`;
+import { BANKS } from './catalog.js';
 
 @Controller('api/banks')
 @UseGuards(SessionGuard)
 export class BanksController {
-  @Get('architecture')
-  bank(@Req() request: FastifyRequest, @Res() reply: FastifyReply) {
-    reply.header('etag', etag);
+  @Get(':bankId')
+  bank(@Param('bankId') bankId: string, @Req() request: FastifyRequest, @Res() reply: FastifyReply) {
+    const bank = BANKS[bankId];
+    if (!bank) {
+      reply.status(404);
+      return reply.send({ detail: '题库不存在' });
+    }
+    reply.header('etag', bank.etag);
     reply.header('cache-control', 'private, max-age=0, must-revalidate');
-    if (request.headers['if-none-match'] === etag) {
+    if (request.headers['if-none-match'] === bank.etag) {
       return reply.status(304).send();
     }
-    return reply.send({ bankId: BANK_ID, etag, questions: DATA });
+    return reply.send({ bankId: bank.id, etag: bank.etag, questions: bank.questions });
   }
 }
