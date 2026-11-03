@@ -19,13 +19,13 @@
   <div class="side-header"><div class="side-title">知识目录 <span id="tocCount">/ 39</span></div><button class="mini-btn" id="toggleSidebar" type="button" aria-expanded="false">展开目录</button></div>
   <input id="search" class="search" type="search" placeholder="搜索" aria-label="搜索题目">
   <div class="filterrow" id="filters">
-   <button class="filterchip active" type="button" data-filter="all">全部</button><button class="filterchip" type="button" data-filter="new">不会</button><button class="filterchip" type="button" data-filter="vague">模糊</button><button class="filterchip" type="button" data-filter="mastered">掌握</button><button class="filterchip" type="button" data-filter="due">今日到期</button><button class="filterchip" type="button" data-filter="wrong">错题</button>
+   <button class="filterchip active" type="button" data-filter="all">全部</button><button class="filterchip" type="button" data-filter="new">不会</button><button class="filterchip" type="button" data-filter="vague">模糊</button><button class="filterchip" type="button" data-filter="mastered">掌握</button><button class="filterchip" type="button" data-filter="due">今日到期</button><button class="filterchip" type="button" data-filter="wrong">错题</button><button class="filterchip" type="button" data-filter="unmemorized" id="unmemorizedChip" hidden>未记住</button><label class="topic-filter" id="topicWrap" hidden>知识域<select id="topicFilter" aria-label="知识域"></select></label>
   </div>
   <div class="side-list" id="toc"></div>
   <div class="side-bottom">到期复习 <strong id="sideDue">39</strong> 道<br>学习记录只在这台浏览器</div>
  </aside>
  <main class="main" id="questionArea">
-  <div class="welcome"><div><strong id="modeLabel">逐题学习</strong><p id="modeHint">答案先遮着，选完再揭晓</p></div><div class="mode-actions"><button class="text-action" id="expandBtn" type="button">全部题目</button><button class="text-action" id="stemBtn" type="button">只看题干</button><button class="text-action" id="maskBtn" type="button" hidden>遮挡</button><button class="text-action" id="submitBtn" type="button" hidden>交卷</button></div><div class="mini-nav"><button class="mini-btn" id="prevBtn" type="button">上一题</button><button class="mini-btn" id="nextBtn" type="button">下一题</button></div></div>
+  <div class="welcome"><div><strong id="modeLabel">逐题学习</strong><p id="modeHint">答案先遮着，选完再揭晓</p></div><div class="mode-actions"><button class="text-action" id="expandBtn" type="button">全部题目</button><button class="text-action" id="stemBtn" type="button">只看题干</button><button class="text-action" id="memorizeBtn" type="button">背题</button><button class="text-action" id="maskBtn" type="button" hidden>遮挡</button><button class="text-action" id="submitBtn" type="button" hidden>交卷</button></div><div class="mini-nav"><button class="mini-btn" id="prevBtn" type="button">上一题</button><button class="mini-btn" id="nextBtn" type="button">下一题</button></div></div>
   <div id="compareSummary"></div>
   <div id="questionCards"></div>
  </main>

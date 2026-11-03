@@ -6,8 +6,11 @@ import {
   attemptEntries,
   attemptOf,
   blankStorageKey,
-  compareLine,
   compareRows,
+  MEMORIZED_KEY,
+  mergeMemorized,
+  paperQuestions,
+  parseMemorized,
   confrontation,
   drillIds,
   hasPickedWrong,
@@ -35,6 +38,7 @@ import { ApiError, api, signOut } from '../../shared/api/client';
 import { queryKeys } from '../../shared/api/query-keys';
 import { Toast } from '../../shared/ui/toast';
 import { STUDY_BANKS, studyBank } from './banks';
+import { MarkedPaper } from './components/marked-paper';
 import { QuestionCard } from './components/question-card';
 import { initialStudyUi, studyUiReducer, type LevelFilter } from './study-reducer';
 
@@ -122,6 +126,16 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
   const queryClient = useQueryClient();
   const [bankId, setBankId] = useState(STUDY_BANKS[0].id);
   const bank = studyBank(bankId);
+  const memoryScope = `${email}:${bankId}`;
+  const [memorized, setMemorized] = useState<string[]>(() => parseMemorized(localStorage.getItem(MEMORIZED_KEY), memoryScope));
+  useEffect(() => {
+    setMemorized(parseMemorized(localStorage.getItem(MEMORIZED_KEY), memoryScope));
+  }, [memoryScope]);
+  function toggleMemorized(id: string) {
+    const next = memorized.includes(id) ? memorized.filter((item) => item !== id) : [...memorized, id];
+    setMemorized(next);
+    localStorage.setItem(MEMORIZED_KEY, mergeMemorized(localStorage.getItem(MEMORIZED_KEY), memoryScope, next));
+  }
   const [ui, dispatch] = useReducer(studyUiReducer, initialStudyUi);
   const recordsQuery = useQuery({
     queryKey: queryKeys.records(bankId),
@@ -151,9 +165,13 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
         return question ? [question] : [];
       })
     : questions;
-  const visible = queue.filter((question) =>
-    matchesQuestion(question, recordOf(question), { filter: ui.filter, keyword: ui.keyword, today }),
-  );
+  const studyFilter = ui.filter === 'unmemorized' ? 'all' : ui.filter;
+  const visible = queue.filter((question) => {
+    if (!matchesQuestion(question, recordOf(question), { filter: studyFilter, keyword: ui.keyword, today })) return false;
+    if (ui.mode === 'memorize' && ui.topic && question.topic !== ui.topic) return false;
+    if (ui.filter === 'unmemorized' && memorized.includes(question.id)) return false;
+    return true;
+  });
   const counters = { new: 0, vague: 0, mastered: 0 };
   for (const question of questions) counters[recordOf(question).level] += 1;
   const dueCount = questions.filter((question) => isDue(recordOf(question).nextReviewOn, today)).length;
@@ -172,6 +190,14 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
+      if (ui.mode === 'memorize') {
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+          event.preventDefault();
+          const next = visible[focusIndex + (event.key === 'ArrowLeft' ? -1 : 1)];
+          if (next) dispatch({ type: 'jump', id: next.id, matches: true });
+        }
+        return;
+      }
       if (ui.mode !== 'focus') return;
       if (event.ctrlKey || event.metaKey || event.altKey || target?.isContentEditable) return;
       if (target && ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(target.tagName)) return;
@@ -217,7 +243,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [ui.mode, ui.activeBlanks, ui.revealed, visible, focusIndex, focusId, questions, current]);
+  }, [ui.mode, ui.activeBlanks, ui.revealed, visible, focusIndex, focusId, questions, current, dispatch]);
 
   function toast(message: string) {
     dispatch({ type: 'toast', message });
@@ -300,7 +326,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
       .filter((question): question is Question => Boolean(question));
     const rows = compareRows(queued, ui.selected);
     const tally = tallyRows(rows);
-    dispatch({ type: 'graded', compare: { lines: rows.map(compareLine), tally } });
+    dispatch({ type: 'graded', compare: { questions: paperQuestions(queued, ui.selected), tally } });
     try {
       const stamped = new Date().toISOString();
       const result = await api<{ records: StudyRecord[]; attemptLog: AttemptEntry[] }>(`/api/study/attempts?bankId=${bankId}`, {
@@ -389,12 +415,16 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
     .sort((a, b) => recordOf(a).nextReviewOn.localeCompare(recordOf(b).nextReviewOn));
   const futurePreview = futureQuestions.slice(0, SCHEDULE_PREVIEW);
   const dueQuestions = questions.filter((question) => isDue(recordOf(question).nextReviewOn, today));
-  const modeLabel = ui.mode === 'stems' ? '只看题干' : ui.mode === 'all' ? '全部题目' : ui.filter === 'due' || ui.mode === 'due' ? '今日到期' : ui.exam?.kind === 'siblings' ? '同组辨析' : ui.exam ? '自测' : '逐题学习';
+  const modeLabel = ui.mode === 'memorize' ? '背题' : ui.mode === 'stems' ? '只看题干' : ui.mode === 'all' ? '全部题目' : ui.filter === 'due' || ui.mode === 'due' ? '今日到期' : ui.exam?.kind === 'siblings' ? '同组辨析' : ui.exam ? '自测' : '逐题学习';
   const duePreview = dueQuestions.slice(0, SCHEDULE_PREVIEW);
   const listMode = ui.mode === 'all' || ui.mode === 'due' || ui.mode === 'stems';
   const shown = listMode ? visible : current ? [current] : [];
-  const focusHint = `第 ${visible.length === 0 || focusIndex < 0 ? 0 : focusIndex + 1} / ${visible.length} 题，方向键切题，1 到 4 选择，[ ] 换空，Enter 揭晓，揭晓后 c 完成`;
-  const modeHint = ui.mode === 'focus' ? (ui.exam ? `${focusHint}，可遮挡再交卷` : focusHint) : `列出 ${shown.length} 题`;
+  const place = `第 ${visible.length === 0 || focusIndex < 0 ? 0 : focusIndex + 1} / ${visible.length} 题`;
+  const focusHint = `${place}，方向键切题，1 到 4 选择，[ ] 换空，Enter 揭晓，揭晓后 c 完成`;
+  const modeHint = ui.mode === 'memorize'
+    ? `${place}。题干和答案都在。记住了只留在这台浏览器，不推进间隔。方向键切题`
+    : ui.mode === 'focus' ? (ui.exam ? `${focusHint}，可遮挡再交卷` : focusHint) : `列出 ${shown.length} 题`;
+  const topics = [...new Set(questions.map((question) => question.topic))];
   const month = today ? monthLoad(today, questions.map((question) => recordOf(question).nextReviewOn)) : null;
 
   return (
@@ -450,9 +480,20 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
           <div className="filterrow" id="filters">
             {(['all', 'new', 'vague', 'mastered', 'due', 'wrong'] as LevelFilter[]).map((filter) => (
               <button type="button" key={filter} className={`filterchip ${ui.filter === filter ? 'active' : ''}`} onClick={() => dispatch({ type: 'filter', filter })}>
-                {{ all: '全部', new: '不会', vague: '模糊', mastered: '掌握', due: '今日到期', wrong: '错题' }[filter]}
+                {{ all: '全部', new: '不会', vague: '模糊', mastered: '掌握', due: '今日到期', wrong: '错题', unmemorized: '未记住' }[filter]}
               </button>
             ))}
+            {ui.mode === 'memorize' ? (
+              <>
+                <button type="button" className={`filterchip ${ui.filter === 'unmemorized' ? 'active' : ''}`} onClick={() => dispatch({ type: 'filter', filter: 'unmemorized' })}>未记住</button>
+                <label className="topic-filter">知识域
+                  <select aria-label="知识域" value={ui.topic} onChange={(event) => dispatch({ type: 'topic', topic: event.target.value })}>
+                    <option value="">全部知识域</option>
+                    {topics.map((topic) => <option key={topic} value={topic}>{topic}</option>)}
+                  </select>
+                </label>
+              </>
+            ) : null}
           </div>
           <TocList questions={visible} focusId={focusId} levelOf={(question) => recordOf(question).level} onJump={(id) => dispatch({ type: 'jump', id, matches: true })} />
           <div className="side-bottom">到期复习 <strong id="sideDue">{dueCount}</strong> 道<br />学习记录在服务器</div>
@@ -466,6 +507,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
             <div className="mode-actions">
               <button type="button" className="text-action" id="expandBtn" onClick={() => { dispatch({ type: 'expand-all' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>全部题目</button>
               <button type="button" className="text-action" id="stemBtn" onClick={() => { dispatch({ type: 'mask-all' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>只看题干</button>
+              <button type="button" className="text-action" id="memorizeBtn" onClick={() => { dispatch({ type: 'mode', mode: 'memorize' }); document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>背题</button>
               {ui.exam ? <button type="button" className="text-action" id="maskBtn" onClick={() => { dispatch({ type: 'mask-exam' }); toast('答案已遮住'); }}>遮挡</button> : null}
               {ui.exam ? <button type="button" className="text-action" id="submitBtn" onClick={() => { void submitExam(); }}>交卷</button> : null}
             </div>
@@ -476,11 +518,13 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
           </div>
           <div id="compareSummary">
             {ui.compare ? (
-              <div className="compare-summary">
-                <h3>交卷对照</h3>
-                <p>{tallyText(ui.compare.tally)}</p>
-                <ol>{ui.compare.lines.map((line, index) => <li key={`${index}-${line}`}>{line}</li>)}</ol>
-              </div>
+              <MarkedPaper
+                questions={ui.compare.questions}
+                tally={ui.compare.tally}
+                filter={ui.paperFilter}
+                onFilter={(filter) => dispatch({ type: 'paper-filter', filter })}
+                onJump={(id) => dispatch({ type: 'jump', id, matches: true })}
+              />
             ) : null}
           </div>
           <div id="questionCards">
@@ -496,13 +540,16 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
                   question={question}
                   record={record}
                   today={today}
-                  reveal={ui.revealed.includes(question.id)}
-                  openBlanks={question.blanks.map((_, index) => ui.revealed.includes(question.id) || ui.revealedBlanks.includes(blankStorageKey(question.id, index)))}
+                  reveal={ui.mode === 'memorize' || ui.revealed.includes(question.id)}
+                  openBlanks={question.blanks.map((_, index) => ui.mode === 'memorize' || ui.revealed.includes(question.id) || ui.revealedBlanks.includes(blankStorageKey(question.id, index)))}
                   blankIndex={blankIndex}
                   selectedId={ui.selected[blankStorageKey(question.id, blankIndex)]}
                   nodeIndex={ui.nodeFocus[question.id] ?? 0}
                   essayCase={ui.activeEssayCase[question.id] ?? 'newapi'}
                   mode={ui.mode}
+                  memorize={ui.mode === 'memorize'}
+                  remembered={memorized.includes(question.id)}
+                  onMemorized={() => toggleMemorized(question.id)}
                   completePending={completeMutation.isPending}
                   onReveal={() => dispatch({ type: 'toggle-reveal', id: question.id })}
                   onRevealBlank={() => dispatch({ type: 'toggle-blank-reveal', id: question.id, index: blankIndex })}
@@ -563,7 +610,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
             <h3>今天应该复习</h3>
             <div id="todayList">
               {dueQuestions.length === 0 ? <p>今天没有到期的题目</p> : duePreview.map((question) => (
-                <div className="dueitem" key={question.id}><a href={`#${question.id}`} onClick={(event) => { event.preventDefault(); dispatch({ type: 'jump', id: question.id, matches: matchesQuestion(question, recordOf(question), { filter: ui.filter, keyword: ui.keyword, today }) }); }}>{question.id} {question.title}</a><span className="duedate">到期 {recordOf(question).nextReviewOn}</span></div>
+                <div className="dueitem" key={question.id}><a href={`#${question.id}`} onClick={(event) => { event.preventDefault(); dispatch({ type: 'jump', id: question.id, matches: matchesQuestion(question, recordOf(question), { filter: studyFilter, keyword: ui.keyword, today }) }); }}>{question.id} {question.title}</a><span className="duedate">到期 {recordOf(question).nextReviewOn}</span></div>
               ))}
               {dueQuestions.length > SCHEDULE_PREVIEW ? <p>还有 {dueQuestions.length - SCHEDULE_PREVIEW} 道。用「今日到期」在目录里逐题看。</p> : null}
             </div>

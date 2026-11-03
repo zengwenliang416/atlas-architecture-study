@@ -46,6 +46,9 @@ export function QuestionCard({
   nodeIndex,
   essayCase,
   mode,
+  memorize = false,
+  remembered = false,
+  onMemorized,
   completePending,
   onReveal,
   onRevealBlank,
@@ -73,6 +76,9 @@ export function QuestionCard({
   nodeIndex: number;
   essayCase: string;
   mode: string;
+  memorize?: boolean;
+  remembered?: boolean;
+  onMemorized?: () => void;
   completePending: boolean;
   onReveal: () => void;
   onRevealBlank: () => void;
@@ -178,7 +184,11 @@ export function QuestionCard({
           <div className="meta-line">{question.kind}　/　{question.topic}　·　{question.blanks.length}个填空/设问</div>
         </div>
         <div className="q-actions">
-          <button type="button" className="small-btn reveal" aria-expanded={reveal} onClick={onReveal}>{reveal ? '再次遮挡' : '揭晓答案'}</button>
+          {memorize ? (
+            <button type="button" className="small-btn" aria-pressed={remembered} onClick={onMemorized}>{remembered ? '已记住' : '记住了'}</button>
+          ) : (
+            <button type="button" className="small-btn reveal" aria-expanded={reveal} onClick={onReveal}>{reveal ? '再次遮挡' : '揭晓答案'}</button>
+          )}
           {drill ? <button type="button" className="small-btn" data-drill={question.id} onClick={onDrill}>同组辨析</button> : null}
           <button type="button" className="small-btn" onClick={() => document.getElementById(`feynman-${question.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>费曼三问</button>
         </div>
@@ -196,12 +206,12 @@ export function QuestionCard({
             </div>
           ) : null}
           {blank.options.length === 0 ? (
-            <div className="preclose">这一空的原始A/B/C/D选项未出现在对话中。<br />先写出术语，再揭晓</div>
+            showBlank ? null : <div className="preclose">这一空的原始A/B/C/D选项未出现在对话中。<br />先写出术语，再揭晓</div>
           ) : (
             <div className="option-list">
               {blank.options.map((option) => {
                 const chosen = picked.has(option.id);
-                const className = choiceClass({ chosen, open: showBlank, correct: option.correct });
+                const className = `${choiceClass({ chosen, open: showBlank, correct: option.correct })}${memorize && option.correct ? ' answer-mark' : ''}`;
                 return (
                   <button type="button" key={option.id} className={className} aria-pressed={chosen} onClick={() => onPick(option.id)}>
                     <span className="letter">{option.id}</span>
@@ -389,7 +399,7 @@ export function QuestionCard({
           ))}
         </div>
         <div className="recordline">上次标记：{formatMarked(record.lastMarkedAt)}<br />下一次复习：<b>{record.nextReviewOn}</b>　已复习：{record.reviewCount}次</div>
-        <div className="review-mark">
+        {memorize ? null : <div className="review-mark">
           <button
             type="button"
             className="reviewbtn"
@@ -403,7 +413,7 @@ export function QuestionCard({
             {doneToday ? '今日已复习' : '今天复习完'}
           </button>
           {!doneToday && !noted ? <p className="margin-rule">先留下一句自己的话，再标今天复习完。</p> : null}
-        </div>
+        </div>}
       </div>
     </article>
   );

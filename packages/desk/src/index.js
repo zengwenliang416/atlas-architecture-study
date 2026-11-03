@@ -115,6 +115,104 @@ export function tallyText(tally) {
   return tally.open > 0 ? `${base} · 概念填空 ${tally.open}` : base;
 }
 
+export const MEMORIZED_KEY = 'atlas_review_memorized_v1';
+
+function letterParts(value) {
+  return String(value ?? '')
+    .split(/[、,，]/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+export function parseMemorized(raw, scope) {
+  try {
+    const all = JSON.parse(raw || '{}');
+    const ids = all && typeof all === 'object' ? all[scope] : [];
+    return Array.isArray(ids) ? ids.filter((id) => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+export function mergeMemorized(raw, scope, ids) {
+  let all = {};
+  try {
+    const parsed = JSON.parse(raw || '{}');
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) all = parsed;
+  } catch {
+    all = {};
+  }
+  return JSON.stringify({ ...all, [scope]: [...ids] });
+}
+
+/** Letter plus the bank's option name. Empty names stay as the letter. */
+export function choiceLabel(blank, selected) {
+  if (!selected || selected === '未选') return '未选';
+  const ids = letterParts(selected);
+  if (!ids.length) return '未选';
+  if (!blank?.options?.length) return ids.join('、');
+  return ids
+    .map((id) => {
+      const option = blank.options.find((item) => item.id === id);
+      const name = String(option?.name ?? '').trim();
+      return name ? `${id} · ${name}` : id;
+    })
+    .join('；');
+}
+
+export function correctLabel(blank) {
+  if (!blank) return '';
+  if (!blank.options?.length || !blank.letter) return blank.answer ?? '';
+  return choiceLabel(blank, blank.letter);
+}
+
+/** Reasons the bank actually wrote for a chosen wrong option. Nothing is invented. */
+export function wrongOptionNotes(blank, selected) {
+  if (!selected || selected === '未选' || !blank?.options?.length) return [];
+  const notes = [];
+  for (const id of letterParts(selected)) {
+    const option = blank.options.find((item) => item.id === id);
+    if (!option || option.correct) continue;
+    const meaning = String(option.meaning ?? '').trim();
+    const reason = String(option.reason ?? '').trim();
+    if (!meaning && !reason) continue;
+    notes.push({ letter: id, name: String(option.name ?? ''), meaning, reason });
+  }
+  return notes;
+}
+
+export function paperQuestions(questions, selected) {
+  const grouped = [];
+  const indexById = new Map();
+  for (const row of compareRows(questions, selected)) {
+    let at = indexById.get(row.questionId);
+    if (at === undefined) {
+      at = grouped.length;
+      indexById.set(row.questionId, at);
+      grouped.push({ questionId: row.questionId, title: row.title, blanks: [] });
+    }
+    const question = questions.find((item) => item.id === row.questionId);
+    const blank = question?.blanks[row.index];
+    const picked = row.selected === '未选' ? '' : row.selected;
+    grouped[at].blanks.push({
+      index: row.index,
+      label: row.label,
+      verdict: row.verdict,
+      yours: row.verdict === 'open' ? '' : choiceLabel(blank, row.selected),
+      answer: correctLabel(blank),
+      notes: row.verdict === 'wrong' ? wrongOptionNotes(blank, picked) : [],
+    });
+  }
+  return grouped;
+}
+
+export function paperMark(blanks) {
+  if (blanks.some((blank) => blank.verdict === 'wrong')) return 'wrong';
+  if (blanks.some((blank) => blank.verdict === 'skip')) return 'skip';
+  if (blanks.some((blank) => blank.verdict === 'right')) return 'right';
+  return 'open';
+}
+
 export function hasPickedWrong(attempt) {
   return Boolean(attempt?.some((item) => item === 'wrong'));
 }
