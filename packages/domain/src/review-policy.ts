@@ -63,6 +63,49 @@ export function formatAttempt(attempt: readonly BlankVerdict[]): string {
   return attempt.join(',');
 }
 
+/** True when any saved slot differs. Callers append history only after this. */
+export function notesChanged(previous: readonly string[], next: readonly string[]): boolean {
+  if (previous.length !== next.length) return false;
+  return previous.some((item, index) => item !== next[index]);
+}
+
+export function hasNoteText(notes: readonly string[]): boolean {
+  return notes.some((note) => note.trim().length > 0);
+}
+
+const CHOICE_LETTERS = /^[A-Z](?:、[A-Z])*$/;
+
+/**
+ * Pair each verdict with the chosen letters.
+ * Skip and open store a null letter. Right and wrong store one letter,
+ * or several letters joined with 、 when the blank is multi-select.
+ * This does not read or write a study schedule.
+ */
+export function attemptChoices(
+  attempt: readonly string[],
+  choices: readonly (string | null)[],
+): Result<{ attempt: BlankVerdict[]; choices: (string | null)[] }> {
+  const parsed = parseAttempt(attempt);
+  if (!parsed || parsed.length !== choices.length) {
+    return { ok: false, error: { code: 'invalid_attempt', message: '交卷结果无效' } };
+  }
+  const normalized: (string | null)[] = [];
+  for (let index = 0; index < parsed.length; index += 1) {
+    const verdict = parsed[index] ?? 'skip';
+    const choice = choices[index];
+    if (verdict === 'skip' || verdict === 'open') {
+      if (choice != null) return { ok: false, error: { code: 'invalid_attempt', message: '交卷结果无效' } };
+      normalized.push(null);
+      continue;
+    }
+    if (typeof choice !== 'string' || !CHOICE_LETTERS.test(choice)) {
+      return { ok: false, error: { code: 'invalid_attempt', message: '交卷结果无效' } };
+    }
+    normalized.push(choice);
+  }
+  return { ok: true, value: { attempt: parsed, choices: normalized } };
+}
+
 export function intervalDays(stage: number): number {
   const days = REVIEW_INTERVALS[stage];
   if (days === undefined) {

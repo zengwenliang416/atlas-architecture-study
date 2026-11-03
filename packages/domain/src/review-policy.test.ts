@@ -5,8 +5,19 @@ import { REVIEW_INTERVALS } from './errors.js';
 import { hasWrongBlank, isDue, matchesQuestion } from './filter.js';
 import { normalizeLegacy } from './normalize.js';
 import type { Question } from './question.js';
-import { completeReview, emptyRecord, markLevel, parseAttempt, replaceAttempt, replaceEssay, replaceNotes } from './review-policy.js';
 import { attemptsCommandSchema, questionIdSchema } from './schema.js';
+import {
+  attemptChoices,
+  completeReview,
+  emptyRecord,
+  hasNoteText,
+  markLevel,
+  notesChanged,
+  parseAttempt,
+  replaceAttempt,
+  replaceEssay,
+  replaceNotes,
+} from './review-policy.js';
 
 const today = '2026-10-12';
 
@@ -19,8 +30,10 @@ test('question ids cover both banks and a full paper can be submitted', () => {
     questionId: `H${index + 1}`,
     version: 0,
     attempt: ['right'] as const,
+    choices: ['A'],
   }));
   assert.equal(attemptsCommandSchema.safeParse({ items }).success, true);
+  assert.equal(attemptsCommandSchema.safeParse({ items: [{ questionId: 'H137', version: 0, attempt: ['wrong'], choices: ['A、C'] }] }).success, true);
   assert.equal(attemptsCommandSchema.safeParse({ items: items.slice(0, 39).map((item) => ({ ...item, questionId: 'Q1' })) }).success, true);
 });
 
@@ -154,6 +167,50 @@ test('交卷结果和论文草稿不推进间隔', () => {
   assert.equal(draft.value.version, 2);
   assert.deepEqual(parseAttempt('wrong,open'), ['wrong', 'open']);
   assert.equal(parseAttempt('wrong,nope'), null);
+});
+
+test('changed note text does not move the schedule', () => {
+  const start = emptyRecord('Q4', today);
+  assert.equal(notesChanged(start.notes, ['管道把步骤串起来', '', '']), true);
+  assert.equal(notesChanged(['管道把步骤串起来', '', ''], ['管道把步骤串起来', '', '']), false);
+  assert.equal(notesChanged(['甲'], ['甲', '乙', '丙']), false);
+  assert.equal(hasNoteText(['  ', '', '']), false);
+  assert.equal(hasNoteText(['一句', '', '']), true);
+  const saved = replaceNotes(start, ['管道把步骤串起来', '', ''], '2026-10-12T02:00:00.000Z');
+  assert.equal(saved.ok, true);
+  if (!saved.ok) return;
+  assert.equal(notesChanged(start.notes, saved.value.notes), true);
+  assert.equal(saved.value.stage, 0);
+  assert.equal(saved.value.reviewCount, 0);
+  assert.equal(saved.value.nextReviewOn, today);
+});
+
+test('attempt letters pair with verdicts and leave the schedule alone', () => {
+  const paired = attemptChoices(['wrong', 'open', 'skip', 'right'], ['A', null, null, 'B']);
+  assert.equal(paired.ok, true);
+  if (!paired.ok) return;
+  assert.deepEqual(paired.value.choices, ['A', null, null, 'B']);
+  assert.equal(attemptChoices(['wrong'], [null]).ok, false);
+  assert.equal(attemptChoices(['skip'], ['A']).ok, false);
+  assert.equal(attemptChoices(['open'], ['A']).ok, false);
+  assert.equal(attemptChoices(['right'], ['a']).ok, false);
+  assert.equal(attemptChoices(['wrong', 'right'], ['A']).ok, false);
+  const start = emptyRecord('Q5', today);
+  const graded = replaceAttempt(start, paired.value.attempt);
+  assert.equal(graded.ok, true);
+  if (!graded.ok) return;
+  assert.equal(graded.value.nextReviewOn, today);
+  assert.equal(graded.value.stage, 0);
+  const wire = attemptsCommandSchema.safeParse({
+    items: [{ questionId: 'Q1', version: 0, attempt: ['wrong', 'open'], choices: ['A', null] }],
+  });
+  assert.equal(wire.success, true);
+  assert.equal(
+    attemptsCommandSchema.safeParse({
+      items: [{ questionId: 'Q1', version: 0, attempt: ['wrong'], choices: ['A1'] }],
+    }).success,
+    false,
+  );
 });
 
 test('legacy snapshots keep an attempt array and an essay draft', () => {

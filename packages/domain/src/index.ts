@@ -15,11 +15,14 @@ export { hasWrongBlank, isDue, matchesQuestion, questionSearchText, type StudyFi
 export { normalizeLegacy } from './normalize.js';
 export type { Blank, Choice, EssaySection, Question } from './question.js';
 export {
+  attemptChoices,
   completeReview,
   emptyRecord,
   formatAttempt,
+  hasNoteText,
   intervalDays,
   markLevel,
+  notesChanged,
   parseAttempt,
   replaceAttempt,
   replaceEssay,
@@ -29,6 +32,7 @@ export {
   type StudyRecord,
 } from './review-policy.js';
 export {
+  attemptChoiceSchema,
   attemptSchema,
   attemptsCommandSchema,
   essayCommandSchema,

@@ -3,20 +3,30 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   SCHEDULE_PREVIEW,
   answersSummary,
+  attemptEntries,
   attemptOf,
   blankStorageKey,
   compareLine,
   compareRows,
+  confrontation,
+  drillIds,
+  hasPickedWrong,
   isMultiAnswer,
   monthLoad,
+  siblingIds,
   tallyRows,
   tallyText,
+  wrongLedger,
+  type AttemptEntry,
+  type NoteEntry,
 } from '@atlas/desk';
 import {
   LEGACY_STORAGE_KEY,
   emptyRecord,
+  hasNoteText,
   isDue,
   matchesQuestion,
+  notesChanged,
   type Level,
   type Question,
   type StudyRecord,
@@ -33,6 +43,8 @@ type RecordsResponse = {
   bankId: string;
   records: StudyRecord[];
   dueQuestionIds: string[];
+  attemptLog: AttemptEntry[];
+  noteHistory: NoteEntry[];
 };
 
 type BankResponse = {
@@ -131,7 +143,15 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
     return recordById.get(question.id) ?? emptyRecord(question.id, today || '1970-01-01');
   }
 
-  const visible = questions.filter((question) =>
+  const attemptLog = recordsQuery.data?.attemptLog ?? [];
+  const noteHistory = recordsQuery.data?.noteHistory ?? [];
+  const queue = ui.exam?.kind === 'siblings'
+    ? ui.exam.ids.flatMap((id) => {
+        const question = questions.find((item) => item.id === id);
+        return question ? [question] : [];
+      })
+    : questions;
+  const visible = queue.filter((question) =>
     matchesQuestion(question, recordOf(question), { filter: ui.filter, keyword: ui.keyword, today }),
   );
   const counters = { new: 0, vague: 0, mastered: 0 };
@@ -282,13 +302,15 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
     const tally = tallyRows(rows);
     dispatch({ type: 'graded', compare: { lines: rows.map(compareLine), tally } });
     try {
-      const result = await api<{ records: StudyRecord[] }>(`/api/study/attempts?bankId=${bankId}`, {
+      const stamped = new Date().toISOString();
+      const result = await api<{ records: StudyRecord[]; attemptLog: AttemptEntry[] }>(`/api/study/attempts?bankId=${bankId}`, {
         method: 'POST',
         body: JSON.stringify({
           items: queued.map((question) => ({
             questionId: question.id,
             version: recordOf(question).version,
             attempt: attemptOf(question, ui.selected),
+            choices: attemptEntries(question, ui.selected, stamped).map((entry) => entry.choice),
           })),
         }),
       });
@@ -299,7 +321,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
         for (const record of result.records) {
           if (!current.records.some((item) => item.questionId === record.questionId)) records.push(record);
         }
-        return { ...current, records };
+        return { ...current, records, attemptLog: [...(current.attemptLog ?? []), ...result.attemptLog] };
       });
       toast(`已交卷：${tallyText(tally)}`);
     } catch (error) {
@@ -308,12 +330,19 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
   }
 
   async function saveNotes(questionId: string, notes: [string, string, string], version: number) {
+    const previous = recordById.get(questionId)?.notes ?? (['', '', ''] as [string, string, string]);
     try {
       const record = await api<StudyRecord>(`/api/study/records/${questionId}/notes?bankId=${bankId}`, {
         method: 'PATCH',
         body: JSON.stringify({ version, notes }),
       });
       replaceRecord(record);
+      if (notesChanged(previous, notes) && hasNoteText(notes)) {
+        const entry: NoteEntry = { questionId, notes, at: new Date().toISOString() };
+        queryClient.setQueryData<RecordsResponse>(queryKeys.records(bankId), (current) => (
+          current ? { ...current, noteHistory: [...(current.noteHistory ?? []), entry] } : current
+        ));
+      }
       return record;
     } catch (error) {
       onConflict(error);
@@ -360,7 +389,7 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
     .sort((a, b) => recordOf(a).nextReviewOn.localeCompare(recordOf(b).nextReviewOn));
   const futurePreview = futureQuestions.slice(0, SCHEDULE_PREVIEW);
   const dueQuestions = questions.filter((question) => isDue(recordOf(question).nextReviewOn, today));
-  const modeLabel = ui.mode === 'stems' ? '只看题干' : ui.mode === 'all' ? '全部题目' : ui.filter === 'due' || ui.mode === 'due' ? '今日到期' : ui.exam ? '自测' : '逐题学习';
+  const modeLabel = ui.mode === 'stems' ? '只看题干' : ui.mode === 'all' ? '全部题目' : ui.filter === 'due' || ui.mode === 'due' ? '今日到期' : ui.exam?.kind === 'siblings' ? '同组辨析' : ui.exam ? '自测' : '逐题学习';
   const duePreview = dueQuestions.slice(0, SCHEDULE_PREVIEW);
   const listMode = ui.mode === 'all' || ui.mode === 'due' || ui.mode === 'stems';
   const shown = listMode ? visible : current ? [current] : [];
@@ -495,6 +524,16 @@ export function StudyPage({ email, onSignedOut }: { email: string; onSignedOut: 
                   onNotes={(notes, version) => saveNotes(question.id, notes, version)}
                   onEssayDraft={(essayDraft, version) => saveEssay(question.id, essayDraft, version)}
                   onCopyEssay={(text) => { void copyText(text); }}
+                  ledger={wrongLedger(question, attemptLog).filter((row) => row.blankIndex === blankIndex)}
+                  priorNote={confrontation(question, attemptLog, noteHistory, blankIndex)}
+                  drill={hasPickedWrong(record.attempt) && siblingIds(questions, question.id).length > 0}
+                  onDrill={() => {
+                    const ids = drillIds(questions, question.id);
+                    if (ids.length === 0) return;
+                    dispatch({ type: 'start', ids, kind: 'siblings' });
+                    document.getElementById('questionArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    toast('这些题共用选项。先答，再交卷。');
+                  }}
                 />
               );
             })}

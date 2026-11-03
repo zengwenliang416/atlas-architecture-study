@@ -33,3 +33,5 @@ Status: implemented
 `packages/bank-architecture` 和 `src/data.js` 没有改。掌握等级、间隔天数和笔记长度仍由原来的规则计算。数据库为学习记录增加交卷文本和论文草稿两列。
 
 `packages/desk` 的测试覆盖对照和月历。`tests/startup.mjs` 覆盖交卷、遮挡、错题筛选、草稿和当月格子，并核对三份 `desk` 文件相同。登录后的复习台另有一次本机库和浏览器核对，见 [交卷路径核对](../testing/2026-11-01-exam-desk-verified.md)。
+
+最新逐空结果仍写在学习记录上。历次选项字母、同组队列和费曼旧稿见 [错选项账本、同组辨析和旧笔记对质](./2026-11-01-wrong-ledger-siblings-notes.md)。
