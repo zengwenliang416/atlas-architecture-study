@@ -1,0 +1,25 @@
+name: atlas-ci
+
+services:
+  agent:
+    image: woodpeckerci/woodpecker-agent:v3.17.0
+    container_name: atlas-woodpecker-agent
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      WOODPECKER_SERVER: 127.0.0.1:9002
+      WOODPECKER_BACKEND: docker
+      WOODPECKER_MAX_WORKFLOWS: "1"
+      WOODPECKER_HOSTNAME: atlas-production-80
+      WOODPECKER_AGENT_LABELS: location=production-80,repo=zengwenliang416/atlas-architecture-study
+    network_mode: host
+    cpus: 1
+    mem_limit: 256m
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/woodpecker/atlas-agent:/etc/woodpecker
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "2"

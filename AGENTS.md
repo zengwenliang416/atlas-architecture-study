@@ -31,6 +31,7 @@ python3 scripts/verify_maintenance.py
 - 密钥放在环境变量。`.env` 不入库。见 [本地运行](docs/cookbook/dev.md)。
 - 首个账号创建成功后关闭公开注册。见 [API](docs/subsystems/api.md)。
 - 测试使用本机 `.env` 指向的库。见 [测试](docs/cookbook/test.md)。
+- 推送到 `main` 后由 Woodpecker 构建并发布到生产。见 [发布](docs/cookbook/deploy.md)。
 
 ## 布局
 
@@ -44,7 +45,7 @@ packages/bank-hcip/             HCIP AI 题面
 src/                           静态站点
 docs/                          当前行为：架构、子系统、操作、事故
 .agents/notes/                 决定和被放弃的方案
-scripts/                       文档和笔记门禁
+scripts/                       文档门禁和发布脚本
 ```
 
 界面规则在 [apps/web/AGENTS.md](apps/web/AGENTS.md)。接口语义在 [API](docs/subsystems/api.md)。这套文字分工的原因在 [笔记](.agents/notes/implemented/process/2026-11-01-docs-and-notes-split.md)。
